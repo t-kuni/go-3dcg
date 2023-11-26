@@ -11,11 +11,6 @@ const (
 )
 
 func main() {
-	m := make3dModel()
-	inverted := invertMatrix(m)
-	projected := transformParallelProjection(inverted)
-	windowCoords := invertMatrix(transformWindowCoords(projected))
-
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		log.Fatalf("SDLを初期化できませんでした: %s", err)
 	}
@@ -28,6 +23,42 @@ func main() {
 	}
 	defer window.Destroy()
 	defer renderer.Destroy()
+
+	running := true
+	for running {
+		m := make3dModel()
+
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				running = false
+			case *sdl.KeyboardEvent:
+				if t.Type == sdl.KEYDOWN || t.Type == sdl.KEYUP {
+					switch t.Keysym.Sym {
+					case sdl.K_UP:
+						// 上キーが押された時の処理
+					case sdl.K_DOWN:
+						// 下キーが押された時の処理
+					case sdl.K_LEFT:
+						// 左キーが押された時の処理
+					case sdl.K_RIGHT:
+						// 右キーが押された時の処理
+					}
+				}
+			}
+		}
+
+		// レンダリング
+		render(renderer, m)
+		renderer.Present()
+		sdl.Delay(16) // 少し遅延を入れてCPU使用率を下げる
+	}
+}
+
+func render(renderer *sdl.Renderer, m *mat.Dense) {
+	inverted := invertMatrix(m)
+	projected := transformParallelProjection(inverted)
+	windowCoords := invertMatrix(transformWindowCoords(projected))
 
 	// ウィンドウの背景色を設定
 	renderer.SetDrawColor(255, 255, 255, 255) // 白色
@@ -53,12 +84,6 @@ func main() {
 		}
 		renderer.DrawLine(start.X, start.Y, end.X, end.Y)
 	}
-
-	// レンダリングを表示
-	renderer.Present()
-
-	// ウィンドウを閉じるまで待機
-	sdl.Delay(5000)
 }
 
 func drawCircle(renderer *sdl.Renderer, x, y, r int32) {
