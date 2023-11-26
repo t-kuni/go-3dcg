@@ -28,6 +28,8 @@ func main() {
 	rotateXTheta := float64(0)
 	rotateYTheta := float64(0)
 
+	camera := makeCamera()
+
 	running := true
 	for running {
 		m := invertMatrix(make3dModel())
@@ -40,20 +42,20 @@ func main() {
 				if t.Type == sdl.KEYDOWN {
 					switch t.Keysym.Sym {
 					case sdl.K_UP:
-						rotateXTheta += math.Pi / 8
+						rotateXTheta += math.Pi / 16
 					case sdl.K_DOWN:
-						rotateXTheta -= math.Pi / 8
+						rotateXTheta -= math.Pi / 16
 					case sdl.K_LEFT:
-						rotateYTheta += math.Pi / 8
+						rotateYTheta += math.Pi / 16
 					case sdl.K_RIGHT:
-						rotateYTheta -= math.Pi / 8
+						rotateYTheta -= math.Pi / 16
 					}
 				}
 			}
 		}
 
 		// レンダリング
-		m2 := transform(m, rotateXTheta, rotateYTheta)
+		m2 := transform(camera, m, rotateXTheta, rotateYTheta)
 		render(renderer, m2)
 		renderer.Present()
 		sdl.Delay(16) // 少し遅延を入れてCPU使用率を下げる
@@ -90,6 +92,84 @@ func render(renderer *sdl.Renderer, m *mat.Dense) {
 	}
 }
 
+type Camera struct {
+	Loc *mat.Dense
+	Dir *mat.Dense
+	Up  *mat.Dense
+}
+
+func makeCamera() *Camera {
+	loc := mat.NewDense(1, 4, []float64{0.3, -0.5, 0.5, 1})
+	dirTo := mat.NewDense(1, 4, []float64{0, 0, 0, 1})
+	dir := calcDirection(loc, dirTo)
+	return &Camera{
+		Loc: loc,
+		Dir: dir,
+		Up:  mat.NewDense(1, 4, []float64{0, 1, 0, 1}),
+	}
+}
+
+func calcDirection(a, b *mat.Dense) *mat.Dense {
+	// aからbへのベクトルを計算
+	dx := b.At(0, 0) - a.At(0, 0)
+	dy := b.At(0, 1) - a.At(0, 1)
+	dz := b.At(0, 2) - a.At(0, 2)
+
+	// ベクトルの長さを計算
+	length := math.Sqrt(dx*dx + dy*dy + dz*dz)
+
+	// ベクトルを正規化
+	if length != 0 {
+		dx /= length
+		dy /= length
+		dz /= length
+	}
+
+	// 正規化されたベクトルを返す
+	return mat.NewDense(1, 4, []float64{dx, dy, dz, 1})
+}
+
+func makeViewMatrix(camera *Camera) *mat.Dense {
+	// 前方ベクトル (Forward Vector)
+	f := camera.Dir
+
+	// 右方ベクトル (Right Vector) = 上方向ベクトル (Up) x 前方ベクトル (Forward)
+	r := crossProduct(camera.Up, f)
+
+	// 新しい上方ベクトル (New Up Vector) = 前方ベクトル (Forward) x 右方ベクトル (Right)
+	u := crossProduct(f, r)
+
+	// カメラの位置ベクトル
+	loc := camera.Loc
+
+	// ビュー変換行列を作成
+	viewMatrix := mat.NewDense(4, 4, []float64{
+		r.At(0, 0), r.At(0, 1), r.At(0, 2), -dotProduct(r, loc),
+		u.At(0, 0), u.At(0, 1), u.At(0, 2), -dotProduct(u, loc),
+		f.At(0, 0), f.At(0, 1), f.At(0, 2), -dotProduct(f, loc),
+		0, 0, 0, 1,
+	})
+
+	return viewMatrix
+}
+
+// crossProduct は2つのベクトルの外積を計算します。
+func crossProduct(a, b *mat.Dense) *mat.Dense {
+	return mat.NewDense(1, 4, []float64{
+		a.At(0, 1)*b.At(0, 2) - a.At(0, 2)*b.At(0, 1),
+		a.At(0, 2)*b.At(0, 0) - a.At(0, 0)*b.At(0, 2),
+		a.At(0, 0)*b.At(0, 1) - a.At(0, 1)*b.At(0, 0),
+		1, // 同次座標成分
+	})
+}
+
+// dotProduct は2つのベクトルの内積を計算します。
+func dotProduct(a, b *mat.Dense) float64 {
+	return a.At(0, 0)*b.At(0, 0) +
+		a.At(0, 1)*b.At(0, 1) +
+		a.At(0, 2)*b.At(0, 2)
+}
+
 func make3dModel() *mat.Dense {
 	return mat.NewDense(4, 4, []float64{
 		0, -0.35355339059327373, -0.2886751345948129, 1,
@@ -106,10 +186,11 @@ func invertMatrix(m *mat.Dense) *mat.Dense {
 	return &inverted
 }
 
-func transform(m *mat.Dense, rotateXTheta float64, rotateYTheta float64) *mat.Dense {
+func transform(camera *Camera, m *mat.Dense, rotateXTheta float64, rotateYTheta float64) *mat.Dense {
 	m1 := transformRotateX(m, rotateXTheta)
 	m2 := transformRotateY(m1, rotateYTheta)
-	return m2
+	m3 := transformViewCoords(camera, m2)
+	return m3
 }
 
 func transformRotateX(m *mat.Dense, theta float64) *mat.Dense {
@@ -165,6 +246,15 @@ func transformWindowCoords(m *mat.Dense) *mat.Dense {
 
 	var transformed mat.Dense
 	transformed.Mul(transformMatrix, m)
+
+	return &transformed
+}
+
+func transformViewCoords(camera *Camera, m *mat.Dense) *mat.Dense {
+	viewMatrix := makeViewMatrix(camera)
+
+	var transformed mat.Dense
+	transformed.Mul(viewMatrix, m)
 
 	return &transformed
 }
