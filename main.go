@@ -4,6 +4,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"gonum.org/v1/gonum/mat"
 	"log"
+	"math"
 )
 
 const (
@@ -24,40 +25,43 @@ func main() {
 	defer window.Destroy()
 	defer renderer.Destroy()
 
+	rotateXTheta := float64(0)
+	rotateYTheta := float64(0)
+
 	running := true
 	for running {
-		m := make3dModel()
+		m := invertMatrix(make3dModel())
 
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				running = false
 			case *sdl.KeyboardEvent:
-				if t.Type == sdl.KEYDOWN || t.Type == sdl.KEYUP {
+				if t.Type == sdl.KEYDOWN {
 					switch t.Keysym.Sym {
 					case sdl.K_UP:
-						// 上キーが押された時の処理
+						rotateXTheta += math.Pi / 8
 					case sdl.K_DOWN:
-						// 下キーが押された時の処理
+						rotateXTheta -= math.Pi / 8
 					case sdl.K_LEFT:
-						// 左キーが押された時の処理
+						rotateYTheta += math.Pi / 8
 					case sdl.K_RIGHT:
-						// 右キーが押された時の処理
+						rotateYTheta -= math.Pi / 8
 					}
 				}
 			}
 		}
 
 		// レンダリング
-		render(renderer, m)
+		m2 := transform(m, rotateXTheta, rotateYTheta)
+		render(renderer, m2)
 		renderer.Present()
 		sdl.Delay(16) // 少し遅延を入れてCPU使用率を下げる
 	}
 }
 
 func render(renderer *sdl.Renderer, m *mat.Dense) {
-	inverted := invertMatrix(m)
-	projected := transformParallelProjection(inverted)
+	projected := transformParallelProjection(m)
 	windowCoords := invertMatrix(transformWindowCoords(projected))
 
 	// ウィンドウの背景色を設定
@@ -86,18 +90,6 @@ func render(renderer *sdl.Renderer, m *mat.Dense) {
 	}
 }
 
-func drawCircle(renderer *sdl.Renderer, x, y, r int32) {
-	for w := 0; w < int(r*2); w++ {
-		for h := 0; h < int(r*2); h++ {
-			dx := r - int32(w) // horizontal offset
-			dy := r - int32(h) // vertical offset
-			if dx*dx+dy*dy <= r*r {
-				renderer.DrawPoint(x+int32(w)-r, y+int32(h)-r)
-			}
-		}
-	}
-}
-
 func make3dModel() *mat.Dense {
 	return mat.NewDense(4, 4, []float64{
 		0, -0.35355339059327373, -0.2886751345948129, 1,
@@ -112,6 +104,38 @@ func invertMatrix(m *mat.Dense) *mat.Dense {
 	inverted.CloneFrom(m.T())
 
 	return &inverted
+}
+
+func transform(m *mat.Dense, rotateXTheta float64, rotateYTheta float64) *mat.Dense {
+	m1 := transformRotateX(m, rotateXTheta)
+	m2 := transformRotateY(m1, rotateYTheta)
+	return m2
+}
+
+func transformRotateX(m *mat.Dense, theta float64) *mat.Dense {
+	rotateMatrix := mat.NewDense(4, 4, []float64{
+		1, 0, 0, 0,
+		0, math.Cos(theta), -math.Sin(theta), 0,
+		0, math.Sin(theta), math.Cos(theta), 0,
+		0, 0, 0, 1,
+	})
+
+	var rotated mat.Dense
+	rotated.Mul(rotateMatrix, m)
+	return &rotated
+}
+
+func transformRotateY(m *mat.Dense, theta float64) *mat.Dense {
+	rotateMatrix := mat.NewDense(4, 4, []float64{
+		math.Cos(theta), 0, math.Sin(theta), 0,
+		0, 1, 0, 0,
+		-math.Sin(theta), 0, math.Cos(theta), 0,
+		0, 0, 0, 1,
+	})
+
+	var rotated mat.Dense
+	rotated.Mul(rotateMatrix, m)
+	return &rotated
 }
 
 func transformParallelProjection(m *mat.Dense) *mat.Dense {
