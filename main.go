@@ -2,11 +2,64 @@ package main
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
+	"gonum.org/v1/gonum/mat"
+	"log"
 )
 
 const (
 	winWidth, winHeight int32 = 800, 600
 )
+
+func main() {
+	m := make3dModel()
+	inverted := invertMatrix(m)
+	projected := transformParallelProjection(inverted)
+	windowCoords := invertMatrix(transformWindowCoords(projected))
+
+	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+		log.Fatalf("SDLを初期化できませんでした: %s", err)
+	}
+	defer sdl.Quit()
+
+	// ウィンドウとレンダラの作成
+	window, renderer, err := sdl.CreateWindowAndRenderer(winWidth, winHeight, sdl.WINDOW_SHOWN)
+	if err != nil {
+		log.Fatalf("ウィンドウとレンダラを作成できませんでした: %s", err)
+	}
+	defer window.Destroy()
+	defer renderer.Destroy()
+
+	// ウィンドウの背景色を設定
+	renderer.SetDrawColor(255, 255, 255, 255) // 白色
+	renderer.Clear()
+
+	// 頂点を直線で結ぶ
+	renderer.SetDrawColor(0, 0, 0, 255) // 黒色
+
+	edges := [][2]int{
+		{0, 1}, {0, 2}, {0, 3}, // 頂点0から各頂点への辺
+		{1, 2}, {1, 3}, // 頂点1から頂点2と3への辺
+		{2, 3}, // 頂点2から頂点3への辺
+	}
+
+	for _, edge := range edges {
+		start := sdl.Point{
+			X: int32(windowCoords.At(edge[0], 0)),
+			Y: int32(windowCoords.At(edge[0], 1)),
+		}
+		end := sdl.Point{
+			X: int32(windowCoords.At(edge[1], 0)),
+			Y: int32(windowCoords.At(edge[1], 1)),
+		}
+		renderer.DrawLine(start.X, start.Y, end.X, end.Y)
+	}
+
+	// レンダリングを表示
+	renderer.Present()
+
+	// ウィンドウを閉じるまで待機
+	sdl.Delay(5000)
+}
 
 func drawCircle(renderer *sdl.Renderer, x, y, r int32) {
 	for w := 0; w < int(r*2); w++ {
@@ -20,31 +73,49 @@ func drawCircle(renderer *sdl.Renderer, x, y, r int32) {
 	}
 }
 
-func main() {
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
-	}
-	defer sdl.Quit()
+func make3dModel() *mat.Dense {
+	return mat.NewDense(4, 4, []float64{
+		0, -0.35355339059327373, -0.2886751345948129, 1,
+		-0.5, -0.35355339059327373, 0.2886751345948129, 1,
+		0.5, -0.35355339059327373, 0.2886751345948129, 1,
+		0, 0.7071067811865476, 0, 1,
+	})
+}
 
-	window, err := sdl.CreateWindow("Circle in Center", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, winWidth, winHeight, sdl.WINDOW_SHOWN)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
+func invertMatrix(m *mat.Dense) *mat.Dense {
+	var inverted mat.Dense
+	inverted.CloneFrom(m.T())
 
-	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
-	if err != nil {
-		panic(err)
-	}
-	defer renderer.Destroy()
+	return &inverted
+}
 
-	renderer.SetDrawColor(255, 255, 255, 255) // 白色で背景を塗りつぶす
-	renderer.Clear()
+func transformParallelProjection(m *mat.Dense) *mat.Dense {
+	projectionMatrix := mat.NewDense(4, 4, []float64{
+		1, 0, 0, 0, // X軸
+		0, 1, 0, 0, // Y軸
+		0, 0, 0, 0, // Z軸（無視）
+		0, 0, 0, 1, // 同次座標
+	})
 
-	renderer.SetDrawColor(255, 0, 0, 255)              // 赤色で円を描画
-	drawCircle(renderer, winWidth/2, winHeight/2, 100) // ウィンドウの中央に半径100の円を描画
+	var projected mat.Dense
+	projected.Mul(projectionMatrix, m)
 
-	renderer.Present()
+	return &projected
+}
 
-	sdl.Delay(5000) // 5秒間ウィンドウを表示
+func transformWindowCoords(m *mat.Dense) *mat.Dense {
+	// スケーリングと平行移動を行う変換行列
+	// スケーリング： 画面の幅、高さ（ピクセル）の値に変換
+	// 平行移動： ウィンドウ座標系の原点を画面の中心に移動
+	transformMatrix := mat.NewDense(4, 4, []float64{
+		float64(winWidth) / 2, 0, 0, float64(winWidth) / 2,
+		0, -float64(winHeight) / 2, 0, float64(winHeight) / 2, // Y軸は反転
+		0, 0, 1, 0, // Z軸はそのまま
+		0, 0, 0, 1, // 同次座標
+	})
+
+	var transformed mat.Dense
+	transformed.Mul(transformMatrix, m)
+
+	return &transformed
 }
