@@ -6,7 +6,6 @@ import (
 
 	"github.com/t-kuni/go-3dcg/domain"
 	"github.com/veandco/go-sdl2/sdl"
-	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -28,9 +27,22 @@ func main() {
 	defer renderer.Destroy()
 
 	world := domain.World{
-		Camera: makeCamera(),
+		Camera: domain.Camera{
+			Location:  domain.Point3D{X: 0, Y: 0, Z: -1.0},
+			Direction: domain.Point3D{X: math.Pi / 16, Y: 0, Z: 0},
+		},
 		LocatedObjects: []domain.LocatedObject{
-			{X: 0.1, Y: 0.1, Z: 0, Object: makeObject()},
+			{
+				X: 0.1, Y: 0.1, Z: 1,
+				Object: domain.Object{
+					Vertices: []domain.Vertex{
+						{domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
+						{domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
+						{domain.Point3D{X: 0.5, Y: 0.0, Z: 0.5}},
+						{domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
+					},
+				},
+			},
 		},
 	}
 
@@ -90,90 +102,4 @@ func render(renderer *sdl.Renderer, discreateWorld domain.DiscreteWorld) {
 			}
 		}
 	}
-}
-
-func makeCamera() domain.Camera {
-	return domain.Camera{
-		Location:  domain.Point3D{X: 0, Y: 0, Z: -1.0},
-		Direction: domain.Point3D{X: math.Pi / 16, Y: 0, Z: 0},
-	}
-}
-
-func calcDirection(a, b *mat.Dense) *mat.Dense {
-	// aからbへのベクトルを計算
-	dx := b.At(0, 0) - a.At(0, 0)
-	dy := b.At(0, 1) - a.At(0, 1)
-	dz := b.At(0, 2) - a.At(0, 2)
-
-	// ベクトルの長さを計算
-	length := math.Sqrt(dx*dx + dy*dy + dz*dz)
-
-	// ベクトルを正規化
-	if length != 0 {
-		dx /= length
-		dy /= length
-		dz /= length
-	}
-
-	// 正規化されたベクトルを返す
-	return mat.NewDense(1, 4, []float64{dx, dy, dz, 1})
-}
-
-// func makeViewMatrix(camera *Camera) *mat.Dense {
-// 	// 前方ベクトル (Forward Vector)
-// 	f := camera.Dir
-
-// 	// 右方ベクトル (Right Vector) = 上方向ベクトル (Up) x 前方ベクトル (Forward)
-// 	r := crossProduct(camera.Up, f)
-
-// 	// 新しい上方ベクトル (New Up Vector) = 前方ベクトル (Forward) x 右方ベクトル (Right)
-// 	u := crossProduct(f, r)
-
-// 	// カメラの位置ベクトル
-// 	loc := camera.Loc
-
-// 	// ビュー変換行列を作成
-// 	viewMatrix := mat.NewDense(4, 4, []float64{
-// 		r.At(0, 0), r.At(0, 1), r.At(0, 2), -dotProduct(r, loc),
-// 		u.At(0, 0), u.At(0, 1), u.At(0, 2), -dotProduct(u, loc),
-// 		f.At(0, 0), f.At(0, 1), f.At(0, 2), -dotProduct(f, loc),
-// 		0, 0, 0, 1,
-// 	})
-
-// 	return viewMatrix
-// }
-
-// // crossProduct は2つのベクトルの外積を計算します。
-// func crossProduct(a, b *mat.Dense) *mat.Dense {
-// 	return mat.NewDense(1, 4, []float64{
-// 		a.At(0, 1)*b.At(0, 2) - a.At(0, 2)*b.At(0, 1),
-// 		a.At(0, 2)*b.At(0, 0) - a.At(0, 0)*b.At(0, 2),
-// 		a.At(0, 0)*b.At(0, 1) - a.At(0, 1)*b.At(0, 0),
-// 		1, // 同次座標成分
-// 	})
-// }
-
-// // dotProduct は2つのベクトルの内積を計算します。
-// func dotProduct(a, b *mat.Dense) float64 {
-// 	return a.At(0, 0)*b.At(0, 0) +
-// 		a.At(0, 1)*b.At(0, 1) +
-// 		a.At(0, 2)*b.At(0, 2)
-// }
-
-func makeObject() domain.Object {
-	return domain.Object{
-		Vertices: []domain.Vertex{
-			{domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
-			{domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
-			{domain.Point3D{X: 0.5, Y: 0.0, Z: 0.5}},
-			{domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
-		},
-	}
-}
-
-func invertMatrix(m *mat.Dense) *mat.Dense {
-	var inverted mat.Dense
-	inverted.CloneFrom(m.T())
-
-	return &inverted
 }

@@ -6,6 +6,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// TransformTranslate
+// 第一引数mは４行である必要がある
 func TransformTranslate(m mat.Dense, x, y, z float64) mat.Dense {
 	translateMatrix := mat.NewDense(4, 4, []float64{
 		1, 0, 0, x,
@@ -21,6 +23,7 @@ func TransformTranslate(m mat.Dense, x, y, z float64) mat.Dense {
 
 // TransformRotate は3つの軸（X、Y、Z）での回転を適用します
 // x, y, z はそれぞれの軸での回転角度（ラジアン）です
+// 第一引数mは４行である必要がある
 func TransformRotate(m mat.Dense, x, y, z float64) mat.Dense {
 	// X軸回転行列
 	rotateXMatrix := mat.NewDense(4, 4, []float64{
@@ -56,6 +59,7 @@ func TransformRotate(m mat.Dense, x, y, z float64) mat.Dense {
 }
 
 // TransformParallelProjection 平行投影
+// 第一引数mは４行である必要がある
 func TransformParallelProjection(m mat.Dense) mat.Dense {
 	projectionMatrix := mat.NewDense(4, 4, []float64{
 		1, 0, 0, 0, // X軸
@@ -72,6 +76,7 @@ func TransformParallelProjection(m mat.Dense) mat.Dense {
 
 // transformScale は3次元オブジェクトの拡大・縮小変換を行います
 // scaleX, scaleY, scaleZ はそれぞれのX、Y、Z軸方向の拡大率です
+// 第一引数mは４行である必要がある
 func TransformScale(m mat.Dense, scaleX, scaleY, scaleZ float64) mat.Dense {
 	scaleMatrix := mat.NewDense(4, 4, []float64{
 		scaleX, 0, 0, 0,
@@ -87,11 +92,13 @@ func TransformScale(m mat.Dense, scaleX, scaleY, scaleZ float64) mat.Dense {
 
 // transformScaleUniform は均等な拡大・縮小変換を行います
 // scale は全軸方向の拡大率です
+// 第一引数mは４行である必要がある
 func TransformScaleUniform(m mat.Dense, scale float64) mat.Dense {
 	return TransformScale(m, scale, scale, scale)
 }
 
 // TransformViewport はビューポート変換を行います
+// 第一引数mは４行である必要がある
 func TransformViewport(m mat.Dense, width, height int32) mat.Dense {
 	// 短辺を基準にスケールを決める
 	scale := math.Min(float64(width), float64(height)) / 2
@@ -101,4 +108,8 @@ func TransformViewport(m mat.Dense, width, height int32) mat.Dense {
 	m = TransformTranslate(m, float64(width)/2, float64(height)/2, 0)
 
 	return m
+}
+
+func T(m mat.Dense) mat.Dense {
+	return *mat.DenseCopyOf((&m).T())
 }

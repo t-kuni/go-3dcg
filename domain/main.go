@@ -17,6 +17,8 @@ func (w World) Transform(viewWidth int32, viewHeight int32) DiscreteWorld {
 	for _, locatedObject := range w.LocatedObjects {
 		m := locatedObject.Object.Matrix()
 
+		m = util.T(m) // 転置(行列計算の次元を揃えるため)
+
 		// ワールド座標変換
 		m = util.TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
 
@@ -30,14 +32,14 @@ func (w World) Transform(viewWidth int32, viewHeight int32) DiscreteWorld {
 		// ビューポート変換
 		m = util.TransformViewport(m, viewWidth, viewHeight)
 
+		m = util.T(m) // 転置(行列計算の次元を揃えるため)
+
 		rowCnt, _ := m.Dims()
+		obj := NewDiscreteObject()
 		for r := 0; r < rowCnt; r++ {
-			discreateWorld.AddObject(DiscreteObject{
-				Vertices: []DiscretePoint2D{
-					{X: int32(math.Round(m.At(r, 0))), Y: int32(math.Round(m.At(r, 1)))},
-				},
-			})
+			obj.AddVertex(DiscretePoint2D{X: int32(math.Round(m.At(r, 0))), Y: int32(math.Round(m.At(r, 1)))})
 		}
+		discreateWorld.AddObject(obj)
 	}
 
 	return discreateWorld
@@ -64,7 +66,7 @@ func (o Object) Matrix() mat.Dense {
 	for _, vertex := range o.Vertices {
 		vertices = append(vertices, vertex.X, vertex.Y, vertex.Z, 1)
 	}
-	return *mat.NewDense(4, 4, vertices)
+	return *mat.NewDense(len(o.Vertices), 4, vertices)
 }
 
 type Vertex struct {
@@ -104,4 +106,14 @@ type DiscretePoint2D struct {
 
 type DiscreteObject struct {
 	Vertices []DiscretePoint2D
+}
+
+func NewDiscreteObject() DiscreteObject {
+	return DiscreteObject{
+		Vertices: []DiscretePoint2D{},
+	}
+}
+
+func (o *DiscreteObject) AddVertex(vertex DiscretePoint2D) {
+	o.Vertices = append(o.Vertices, vertex)
 }
