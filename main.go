@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
-	"gonum.org/v1/gonum/mat"
 	"log"
 	"math"
+
+	"github.com/veandco/go-sdl2/sdl"
+	"gonum.org/v1/gonum/mat"
 )
 
 const (
