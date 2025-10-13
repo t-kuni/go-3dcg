@@ -4,6 +4,7 @@ import (
 	"log"
 	"math"
 
+	"github.com/t-kuni/go-3dcg/util"
 	"github.com/veandco/go-sdl2/sdl"
 	"gonum.org/v1/gonum/mat"
 )
@@ -26,15 +27,17 @@ func main() {
 	defer window.Destroy()
 	defer renderer.Destroy()
 
-	rotateXTheta := float64(0)
-	rotateYTheta := float64(0)
+	world := World{
+		Camera: makeCamera(),
+		LocatedObjects: []LocatedObject{
+			{X: 0.1, Y: 0.1, Z: 0, Object: makeObject()},
+		},
+	}
 
-	camera := makeCamera()
+	once := false
 
 	running := true
 	for running {
-		m := invertMatrix(make3dModel())
-
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
@@ -42,31 +45,30 @@ func main() {
 			case *sdl.KeyboardEvent:
 				if t.Type == sdl.KEYDOWN {
 					switch t.Keysym.Sym {
-					case sdl.K_UP:
-						rotateXTheta += math.Pi / 16
-					case sdl.K_DOWN:
-						rotateXTheta -= math.Pi / 16
-					case sdl.K_LEFT:
-						rotateYTheta += math.Pi / 16
-					case sdl.K_RIGHT:
-						rotateYTheta -= math.Pi / 16
+					// case sdl.K_UP:
+					// 	rotateXTheta += math.Pi / 16
+					// case sdl.K_DOWN:
+					// 	rotateXTheta -= math.Pi / 16
+					// case sdl.K_LEFT:
+					// 	rotateYTheta += math.Pi / 16
+					// case sdl.K_RIGHT:
+					// 	rotateYTheta -= math.Pi / 16
 					}
 				}
 			}
 		}
+		if !once {
+			discreateWorld := world.Transform()
+			render(renderer, discreateWorld)
+			renderer.Present()
 
-		// レンダリング
-		m2 := transform(camera, m, rotateXTheta, rotateYTheta)
-		render(renderer, m2)
-		renderer.Present()
+			once = true
+		}
 		sdl.Delay(16) // 少し遅延を入れてCPU使用率を下げる
 	}
 }
 
-func render(renderer *sdl.Renderer, m *mat.Dense) {
-	projected := transformParallelProjection(m)
-	windowCoords := invertMatrix(transformWindowCoords(projected))
-
+func render(renderer *sdl.Renderer, discreateWorld DiscreteWorld) {
 	// ウィンドウの背景色を設定
 	renderer.SetDrawColor(255, 255, 255, 255) // 白色
 	renderer.Clear()
@@ -74,39 +76,32 @@ func render(renderer *sdl.Renderer, m *mat.Dense) {
 	// 頂点を直線で結ぶ
 	renderer.SetDrawColor(0, 0, 0, 255) // 黒色
 
-	edges := [][2]int{
-		{0, 1}, {0, 2}, {0, 3}, // 頂点0から各頂点への辺
-		{1, 2}, {1, 3}, // 頂点1から頂点2と3への辺
-		{2, 3}, // 頂点2から頂点3への辺
-	}
+	// 各DiscreteObjectについて、全ての頂点を結ぶ直線を描画
+	for _, discreteObject := range discreateWorld.DiscreteObjects {
+		vertices := discreteObject.Vertices
+		vertexCount := len(vertices)
 
-	for _, edge := range edges {
-		start := sdl.Point{
-			X: int32(windowCoords.At(edge[0], 0)),
-			Y: int32(windowCoords.At(edge[0], 1)),
+		// 全ての頂点の組み合わせで直線を描画
+		for i := 0; i < vertexCount; i++ {
+			for j := i + 1; j < vertexCount; j++ {
+				start := vertices[i]
+				end := vertices[j]
+				renderer.DrawLine(start.X, start.Y, end.X, end.Y)
+			}
 		}
-		end := sdl.Point{
-			X: int32(windowCoords.At(edge[1], 0)),
-			Y: int32(windowCoords.At(edge[1], 1)),
-		}
-		renderer.DrawLine(start.X, start.Y, end.X, end.Y)
 	}
 }
 
 type Camera struct {
-	Loc *mat.Dense
-	Dir *mat.Dense
-	Up  *mat.Dense
+	Location  Point3D
+	Direction Point3D
+	// Up        *mat.Dense
 }
 
-func makeCamera() *Camera {
-	loc := mat.NewDense(1, 4, []float64{0.3, -0.5, 0.5, 1})
-	dirTo := mat.NewDense(1, 4, []float64{0, 0, 0, 1})
-	dir := calcDirection(loc, dirTo)
-	return &Camera{
-		Loc: loc,
-		Dir: dir,
-		Up:  mat.NewDense(1, 4, []float64{0, 1, 0, 1}),
+func makeCamera() Camera {
+	return Camera{
+		Location:  Point3D{X: 0, Y: 0, Z: -1.0},
+		Direction: Point3D{X: math.Pi / 16, Y: 0, Z: 0},
 	}
 }
 
@@ -130,54 +125,56 @@ func calcDirection(a, b *mat.Dense) *mat.Dense {
 	return mat.NewDense(1, 4, []float64{dx, dy, dz, 1})
 }
 
-func makeViewMatrix(camera *Camera) *mat.Dense {
-	// 前方ベクトル (Forward Vector)
-	f := camera.Dir
+// func makeViewMatrix(camera *Camera) *mat.Dense {
+// 	// 前方ベクトル (Forward Vector)
+// 	f := camera.Dir
 
-	// 右方ベクトル (Right Vector) = 上方向ベクトル (Up) x 前方ベクトル (Forward)
-	r := crossProduct(camera.Up, f)
+// 	// 右方ベクトル (Right Vector) = 上方向ベクトル (Up) x 前方ベクトル (Forward)
+// 	r := crossProduct(camera.Up, f)
 
-	// 新しい上方ベクトル (New Up Vector) = 前方ベクトル (Forward) x 右方ベクトル (Right)
-	u := crossProduct(f, r)
+// 	// 新しい上方ベクトル (New Up Vector) = 前方ベクトル (Forward) x 右方ベクトル (Right)
+// 	u := crossProduct(f, r)
 
-	// カメラの位置ベクトル
-	loc := camera.Loc
+// 	// カメラの位置ベクトル
+// 	loc := camera.Loc
 
-	// ビュー変換行列を作成
-	viewMatrix := mat.NewDense(4, 4, []float64{
-		r.At(0, 0), r.At(0, 1), r.At(0, 2), -dotProduct(r, loc),
-		u.At(0, 0), u.At(0, 1), u.At(0, 2), -dotProduct(u, loc),
-		f.At(0, 0), f.At(0, 1), f.At(0, 2), -dotProduct(f, loc),
-		0, 0, 0, 1,
-	})
+// 	// ビュー変換行列を作成
+// 	viewMatrix := mat.NewDense(4, 4, []float64{
+// 		r.At(0, 0), r.At(0, 1), r.At(0, 2), -dotProduct(r, loc),
+// 		u.At(0, 0), u.At(0, 1), u.At(0, 2), -dotProduct(u, loc),
+// 		f.At(0, 0), f.At(0, 1), f.At(0, 2), -dotProduct(f, loc),
+// 		0, 0, 0, 1,
+// 	})
 
-	return viewMatrix
-}
+// 	return viewMatrix
+// }
 
-// crossProduct は2つのベクトルの外積を計算します。
-func crossProduct(a, b *mat.Dense) *mat.Dense {
-	return mat.NewDense(1, 4, []float64{
-		a.At(0, 1)*b.At(0, 2) - a.At(0, 2)*b.At(0, 1),
-		a.At(0, 2)*b.At(0, 0) - a.At(0, 0)*b.At(0, 2),
-		a.At(0, 0)*b.At(0, 1) - a.At(0, 1)*b.At(0, 0),
-		1, // 同次座標成分
-	})
-}
+// // crossProduct は2つのベクトルの外積を計算します。
+// func crossProduct(a, b *mat.Dense) *mat.Dense {
+// 	return mat.NewDense(1, 4, []float64{
+// 		a.At(0, 1)*b.At(0, 2) - a.At(0, 2)*b.At(0, 1),
+// 		a.At(0, 2)*b.At(0, 0) - a.At(0, 0)*b.At(0, 2),
+// 		a.At(0, 0)*b.At(0, 1) - a.At(0, 1)*b.At(0, 0),
+// 		1, // 同次座標成分
+// 	})
+// }
 
-// dotProduct は2つのベクトルの内積を計算します。
-func dotProduct(a, b *mat.Dense) float64 {
-	return a.At(0, 0)*b.At(0, 0) +
-		a.At(0, 1)*b.At(0, 1) +
-		a.At(0, 2)*b.At(0, 2)
-}
+// // dotProduct は2つのベクトルの内積を計算します。
+// func dotProduct(a, b *mat.Dense) float64 {
+// 	return a.At(0, 0)*b.At(0, 0) +
+// 		a.At(0, 1)*b.At(0, 1) +
+// 		a.At(0, 2)*b.At(0, 2)
+// }
 
-func make3dModel() *mat.Dense {
-	return mat.NewDense(4, 4, []float64{
-		0, -0.35355339059327373, -0.2886751345948129, 1,
-		-0.5, -0.35355339059327373, 0.2886751345948129, 1,
-		0.5, -0.35355339059327373, 0.2886751345948129, 1,
-		0, 0.7071067811865476, 0, 1,
-	})
+func makeObject() Object {
+	return Object{
+		Vertices: []Vertex{
+			{Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
+			{Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
+			{Point3D{X: 0.5, Y: 0.0, Z: 0.5}},
+			{Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
+		},
+	}
 }
 
 func invertMatrix(m *mat.Dense) *mat.Dense {
@@ -187,12 +184,10 @@ func invertMatrix(m *mat.Dense) *mat.Dense {
 	return &inverted
 }
 
-func transform(camera *Camera, m *mat.Dense, rotateXTheta float64, rotateYTheta float64) *mat.Dense {
-	m1 := transformRotateX(m, rotateXTheta)
-	m2 := transformRotateY(m1, rotateYTheta)
-	m3 := transformViewCoords(camera, m2)
-	return m3
-}
+// func transform(camera *Camera, m *mat.Dense) *mat.Dense {
+// 	m3 := transformViewCoords(camera, m)
+// 	return m3
+// }
 
 func transformRotateX(m *mat.Dense, theta float64) *mat.Dense {
 	rotateMatrix := mat.NewDense(4, 4, []float64{
@@ -220,42 +215,117 @@ func transformRotateY(m *mat.Dense, theta float64) *mat.Dense {
 	return &rotated
 }
 
-func transformParallelProjection(m *mat.Dense) *mat.Dense {
-	projectionMatrix := mat.NewDense(4, 4, []float64{
-		1, 0, 0, 0, // X軸
-		0, 1, 0, 0, // Y軸
-		0, 0, 0, 0, // Z軸（無視）
-		0, 0, 0, 1, // 同次座標
-	})
+// func transformViewCoords(camera *Camera, m *mat.Dense) *mat.Dense {
+// 	viewMatrix := makeViewMatrix(camera)
 
-	var projected mat.Dense
-	projected.Mul(projectionMatrix, m)
+// 	var transformed mat.Dense
+// 	transformed.Mul(viewMatrix, m)
 
-	return &projected
+// 	return &transformed
+// }
+
+// type CameraView struct {
+// 	Camera Camera
+// 	Objects []Object
+// }
+
+type TransformedWorld struct {
+	TransformedObjects []TransformedObject
 }
 
-func transformWindowCoords(m *mat.Dense) *mat.Dense {
-	// スケーリングと平行移動を行う変換行列
-	// スケーリング： 画面の幅、高さ（ピクセル）の値に変換
-	// 平行移動： ウィンドウ座標系の原点を画面の中心に移動
-	transformMatrix := mat.NewDense(4, 4, []float64{
-		float64(winWidth) / 2, 0, 0, float64(winWidth) / 2,
-		0, -float64(winHeight) / 2, 0, float64(winHeight) / 2, // Y軸は反転
-		0, 0, 1, 0, // Z軸はそのまま
-		0, 0, 0, 1, // 同次座標
-	})
-
-	var transformed mat.Dense
-	transformed.Mul(transformMatrix, m)
-
-	return &transformed
+type TransformedObject struct {
+	Vertices mat.Dense
 }
 
-func transformViewCoords(camera *Camera, m *mat.Dense) *mat.Dense {
-	viewMatrix := makeViewMatrix(camera)
+type World struct {
+	Camera         Camera
+	LocatedObjects []LocatedObject
+}
 
-	var transformed mat.Dense
-	transformed.Mul(viewMatrix, m)
+func (w World) Transform() DiscreteWorld {
+	discreateWorld := NewDiscreteWorld()
+	for _, locatedObject := range w.LocatedObjects {
+		m := locatedObject.Object.Matrix()
 
-	return &transformed
+		// ワールド座標変換
+		m = util.TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
+
+		// カメラ座標変換
+		m = util.TransformTranslate(m, -w.Camera.Location.X, -w.Camera.Location.Y, -w.Camera.Location.Z)
+		m = util.TransformRotate(m, -w.Camera.Direction.X, -w.Camera.Direction.Y, -w.Camera.Direction.Z)
+
+		// 投影変換
+		m = util.TransformParallelProjection(m)
+
+		// ビューポート変換
+		m = util.TransformViewport(m, winWidth, winHeight)
+
+		rowCnt, _ := m.Dims()
+		for r := 0; r < rowCnt; r++ {
+			discreateWorld.AddObject(DiscreteObject{
+				Vertices: []DiscretePoint2D{
+					{X: int32(math.Round(m.At(r, 0))), Y: int32(math.Round(m.At(r, 1)))},
+				},
+			})
+		}
+	}
+
+	return discreateWorld
+}
+
+type LocatedObject struct {
+	X, Y, Z float64
+	Object  Object
+}
+
+type Object struct {
+	Vertices []Vertex
+	// EdgeIndexes []int
+}
+
+func (o Object) Matrix() mat.Dense {
+	vertices := []float64{}
+	for _, vertex := range o.Vertices {
+		vertices = append(vertices, vertex.X, vertex.Y, vertex.Z, 1)
+	}
+	return *mat.NewDense(4, 4, vertices)
+}
+
+type Vertex struct {
+	Point3D
+}
+
+// func (w World) AddObject(object Object) {
+// 	w.Objects = append(w.Objects, object)
+// }
+
+type Point3D struct {
+	X, Y, Z float64
+}
+
+func (p Point3D) Matrix() mat.Dense {
+	return *mat.NewDense(1, 4, []float64{p.X, p.Y, p.Z, 1})
+}
+
+type DiscreteWorld struct {
+	DiscreteObjects []DiscreteObject
+}
+
+func NewDiscreteWorld() DiscreteWorld {
+	return DiscreteWorld{
+		DiscreteObjects: []DiscreteObject{},
+	}
+}
+
+func (w *DiscreteWorld) AddObject(object DiscreteObject) {
+	w.DiscreteObjects = append(w.DiscreteObjects, object)
+}
+
+// DiscretePoint2D 整数型の二次元座標
+type DiscretePoint2D struct {
+	X, Y int32
+}
+
+type DiscreteObject struct {
+	Vertices []DiscretePoint2D
 }

@@ -9,3 +9,10 @@ sudo apt-get install libsdl2-dev
 ```
 go run main.go
 ```
+
+---
+
+メモ
+
+* Dense
+    * 行列のこと
