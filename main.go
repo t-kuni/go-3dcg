@@ -4,8 +4,8 @@ import (
 	"log"
 	"math"
 
+	"github.com/fogleman/gg"
 	"github.com/t-kuni/go-3dcg/domain"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 const (
@@ -13,19 +13,6 @@ const (
 )
 
 func main() {
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		log.Fatalf("SDLを初期化できませんでした: %s", err)
-	}
-	defer sdl.Quit()
-
-	// ウィンドウとレンダラの作成
-	window, renderer, err := sdl.CreateWindowAndRenderer(winWidth, winHeight, sdl.WINDOW_SHOWN)
-	if err != nil {
-		log.Fatalf("ウィンドウとレンダラを作成できませんでした: %s", err)
-	}
-	defer window.Destroy()
-	defer renderer.Destroy()
-
 	world := domain.World{
 		Camera: domain.Camera{
 			Location:  domain.Point3D{X: 0, Y: 0, Z: -1.0},
@@ -36,10 +23,10 @@ func main() {
 				X: 0, Y: 0, Z: 1,
 				Object: domain.Object{
 					Vertices: []domain.Vertex{
-						{domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
-						{domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
-						{domain.Point3D{X: 0.0, Y: 0.0, Z: 0.5}},
-						{domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
+						{Point3D: domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
+						{Point3D: domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
+						{Point3D: domain.Point3D{X: 0.0, Y: 0.0, Z: 0.5}},
+						{Point3D: domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
 					},
 				},
 			},
@@ -51,50 +38,35 @@ func main() {
 		},
 	}
 
-	once := false
+	// 3D世界を2D座標に変換
+	discreteWorld := world.Transform()
 
-	running := true
-	for running {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch t := event.(type) {
-			case *sdl.QuitEvent:
-				running = false
-			case *sdl.KeyboardEvent:
-				if t.Type == sdl.KEYDOWN {
-					switch t.Keysym.Sym {
-					// case sdl.K_UP:
-					// 	rotateXTheta += math.Pi / 16
-					// case sdl.K_DOWN:
-					// 	rotateXTheta -= math.Pi / 16
-					// case sdl.K_LEFT:
-					// 	rotateYTheta += math.Pi / 16
-					// case sdl.K_RIGHT:
-					// 	rotateYTheta -= math.Pi / 16
-					}
-				}
-			}
-		}
-		if !once {
-			discreateWorld := world.Transform()
-			render(renderer, discreateWorld)
-			renderer.Present()
+	// 画像コンテキストを作成
+	dc := gg.NewContext(int(winWidth), int(winHeight))
 
-			once = true
-		}
-		sdl.Delay(16) // 少し遅延を入れてCPU使用率を下げる
+	// 画像をレンダリング
+	render(dc, discreteWorld)
+
+	// 画像ファイルとして保存
+	err := dc.SavePNG("render.png")
+	if err != nil {
+		log.Fatalf("画像の保存に失敗しました: %s", err)
 	}
+
+	log.Println("render.png を出力しました")
 }
 
-func render(renderer *sdl.Renderer, discreateWorld domain.DiscreteWorld) {
-	// ウィンドウの背景色を設定
-	renderer.SetDrawColor(255, 255, 255, 255) // 白色
-	renderer.Clear()
+func render(dc *gg.Context, discreteWorld domain.DiscreteWorld) {
+	// 背景色を白に設定
+	dc.SetRGB(1, 1, 1)
+	dc.Clear()
 
-	// 頂点を直線で結ぶ
-	renderer.SetDrawColor(0, 0, 0, 255) // 黒色
+	// 線の色を黒に設定
+	dc.SetRGB(0, 0, 0)
+	dc.SetLineWidth(1)
 
 	// 各DiscreteObjectについて、全ての頂点を結ぶ直線を描画
-	for _, discreteObject := range discreateWorld.DiscreteObjects {
+	for _, discreteObject := range discreteWorld.DiscreteObjects {
 		vertices := discreteObject.Vertices
 		vertexCount := len(vertices)
 
@@ -103,8 +75,11 @@ func render(renderer *sdl.Renderer, discreateWorld domain.DiscreteWorld) {
 			for j := i + 1; j < vertexCount; j++ {
 				start := vertices[i]
 				end := vertices[j]
-				renderer.DrawLine(start.X, start.Y, end.X, end.Y)
+				dc.DrawLine(float64(start.X), float64(start.Y), float64(end.X), float64(end.Y))
 			}
 		}
 	}
+
+	// 描画を実行
+	dc.Stroke()
 }
