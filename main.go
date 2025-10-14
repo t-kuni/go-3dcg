@@ -44,6 +44,11 @@ func main() {
 				},
 			},
 		},
+		Viewport: domain.Viewport{
+			Width:      winWidth,
+			Height:     winHeight,
+			ScaleRatio: 0.25,
+		},
 	}
 
 	once := false
@@ -70,7 +75,7 @@ func main() {
 			}
 		}
 		if !once {
-			discreateWorld := world.Transform(winWidth, winHeight)
+			discreateWorld := world.Transform()
 			render(renderer, discreateWorld)
 			renderer.Present()
 

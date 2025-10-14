@@ -98,12 +98,19 @@ func TransformScaleUniform(m mat.Dense, scale float64) mat.Dense {
 }
 
 // TransformViewport はビューポート変換を行います
+// SDL2の仕様に準拠した整数型の座標系に変換します
+// SDL2の仕様：
+// - 原点 (0,0) はウィンドウの左上
+// - X軸は右方向が正
+// - Y軸は下方向が正
+//
 // 第一引数mは４行である必要がある
-func TransformViewport(m mat.Dense, width, height int32) mat.Dense {
+// 実数値の単位座標(1.0f)を「画面の短辺」の{scaleRatio}%分、拡大する
+func TransformViewport(m mat.Dense, width, height int32, scaleRatio float64) mat.Dense {
 	// 短辺を基準にスケールを決める
-	scale := math.Min(float64(width), float64(height)) / 2
+	scale := math.Min(float64(width), float64(height)) * scaleRatio
 
-	m = TransformScale(m, scale, scale, 1)
+	m = TransformScale(m, scale, -scale, 1) // SDL2に準拠するため上下反転する
 
 	m = TransformTranslate(m, float64(width)/2, float64(height)/2, 0)
 

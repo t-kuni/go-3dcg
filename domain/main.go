@@ -10,9 +10,16 @@ import (
 type World struct {
 	Camera         Camera
 	LocatedObjects []LocatedObject
+	Viewport       Viewport
 }
 
-func (w World) Transform(viewWidth int32, viewHeight int32) DiscreteWorld {
+type Viewport struct {
+	Width      int32
+	Height     int32
+	ScaleRatio float64
+}
+
+func (w World) Transform() DiscreteWorld {
 	discreateWorld := NewDiscreteWorld()
 	for _, locatedObject := range w.LocatedObjects {
 		m := locatedObject.Object.Matrix()
@@ -30,7 +37,7 @@ func (w World) Transform(viewWidth int32, viewHeight int32) DiscreteWorld {
 		m = util.TransformParallelProjection(m)
 
 		// ビューポート変換
-		m = util.TransformViewport(m, viewWidth, viewHeight)
+		m = util.TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
 
 		m = util.T(m) // 転置(行列計算の次元を揃えるため)
 
