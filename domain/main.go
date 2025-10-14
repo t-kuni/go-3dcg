@@ -39,7 +39,7 @@ func (w World) Transform() DiscreteWorld {
 		// ビューポート変換
 		m = util.TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
 
-		m = util.T(m) // 転置(行列計算の次元を揃えるため)
+		m = util.T(m) // 転置を戻す
 
 		rowCnt, _ := m.Dims()
 		obj := NewDiscreteObject()
