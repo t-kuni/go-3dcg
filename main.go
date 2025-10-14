@@ -33,12 +33,12 @@ func main() {
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
-				X: 0.1, Y: 0.1, Z: 1,
+				X: 0, Y: 0, Z: 1,
 				Object: domain.Object{
 					Vertices: []domain.Vertex{
 						{domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
 						{domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
-						{domain.Point3D{X: 0.5, Y: 0.0, Z: 0.5}},
+						{domain.Point3D{X: 0.0, Y: 0.0, Z: 0.5}},
 						{domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
 					},
 				},
