@@ -28,6 +28,14 @@ func main() {
 						{Point3D: domain.Point3D{X: 0.0, Y: 0.0, Z: 0.5}},
 						{Point3D: domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
 					},
+					Edges: []domain.Edge{
+						{From: 0, To: 1},
+						{From: 0, To: 2},
+						{From: 0, To: 3},
+						{From: 1, To: 2},
+						{From: 1, To: 3},
+						{From: 2, To: 3},
+					},
 				},
 			},
 		},
@@ -65,16 +73,16 @@ func render(dc *gg.Context, discreteWorld domain.DiscreteWorld) {
 	dc.SetRGB(0, 0, 0)
 	dc.SetLineWidth(1)
 
-	// 各DiscreteObjectについて、全ての頂点を結ぶ直線を描画
+	// 各DiscreteObjectについて、Edgesに従って直線を描画
 	for _, discreteObject := range discreteWorld.DiscreteObjects {
 		vertices := discreteObject.Vertices
-		vertexCount := len(vertices)
+		edges := discreteObject.Edges
 
-		// 全ての頂点の組み合わせで直線を描画
-		for i := 0; i < vertexCount; i++ {
-			for j := i + 1; j < vertexCount; j++ {
-				start := vertices[i]
-				end := vertices[j]
+		// Edgesに従って直線を描画
+		for _, edge := range edges {
+			if edge.From < len(vertices) && edge.To < len(vertices) {
+				start := vertices[edge.From]
+				end := vertices[edge.To]
 				dc.DrawLine(float64(start.X), float64(start.Y), float64(end.X), float64(end.Y))
 			}
 		}

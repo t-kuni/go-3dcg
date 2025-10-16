@@ -53,6 +53,7 @@ func (w World) Transform() DiscreteWorld {
 
 		rowCnt, _ := m.Dims()
 		obj := NewDiscreteObject()
+		obj.Edges = locatedObject.Object.Edges
 		for r := 0; r < rowCnt; r++ {
 			obj.AddVertex(DiscretePoint2D{X: int32(math.Round(m.At(r, 0))), Y: int32(math.Round(m.At(r, 1)))})
 		}
@@ -97,7 +98,7 @@ type LocatedObject struct {
 
 type Object struct {
 	Vertices []Vertex
-	// EdgeIndexes []int
+	Edges    []Edge
 }
 
 func (o Object) Matrix() mat.Dense {
@@ -112,9 +113,12 @@ type Vertex struct {
 	Point3D
 }
 
-// func (w World) AddObject(object Object) {
-// 	w.Objects = append(w.Objects, object)
-// }
+type Edge struct {
+	// From 始点となる頂点の添字番号を保持
+	From int
+	// To 終点となる頂点の添字番号を保持
+	To int
+}
 
 type Point3D struct {
 	X, Y, Z float64
@@ -145,6 +149,7 @@ type DiscretePoint2D struct {
 
 type DiscreteObject struct {
 	Vertices []DiscretePoint2D
+	Edges    []Edge
 }
 
 func NewDiscreteObject() DiscreteObject {
