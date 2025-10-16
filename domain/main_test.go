@@ -182,3 +182,24 @@ func TestWorld_Transform_三角形のオブジェクト(t *testing.T) {
 	assert.Equal(t, int32(50), result.DiscreteObjects[0].Vertices[2].X)
 	assert.Equal(t, int32(25), result.DiscreteObjects[0].Vertices[2].Y) // SDL2の仕様に準拠するため上下逆転する点に注意する
 }
+
+func TestWorld_ViewVolume_基本的な計算(t *testing.T) {
+	world := World{
+		Viewport: Viewport{
+			Width:  200,
+			Height: 100,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
+
+	result := world.ViewVolume()
+
+	assert.InDelta(t, 0.82, result.NearClippingHeight, 0.05)
+	assert.InDelta(t, 1.64, result.NearClippingWidth, 0.05)
+	assert.InDelta(t, 1.64, result.FarClippingHeight, 0.05)
+	assert.InDelta(t, 3.28, result.FarClippingWidth, 0.05)
+}

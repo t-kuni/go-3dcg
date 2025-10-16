@@ -11,12 +11,22 @@ type World struct {
 	Camera         Camera
 	LocatedObjects []LocatedObject
 	Viewport       Viewport
+	Clipping       Clipping
 }
 
 type Viewport struct {
 	Width      int32
 	Height     int32
 	ScaleRatio float64
+}
+
+type Clipping struct {
+	// NearDistance 前方クリップ面までの距離
+	NearDistance float64
+	// FarDistance 後方クリップ面までの距離
+	FarDistance float64
+	// FieldOfView 視野角(単位：ラジアン)
+	FieldOfView float64
 }
 
 func (w World) Transform() DiscreteWorld {
@@ -50,6 +60,28 @@ func (w World) Transform() DiscreteWorld {
 	}
 
 	return discreateWorld
+}
+
+type ViewVolume struct {
+	NearClippingWidth  float64
+	NearClippingHeight float64
+	FarClippingWidth   float64
+	FarClippingHeight  float64
+}
+
+func (w World) ViewVolume() ViewVolume {
+	aspectRatio := float64(w.Viewport.Width) / float64(w.Viewport.Height)
+	nearClippingHeight := 2.0 * math.Tan(w.Clipping.FieldOfView/2.0) * w.Clipping.NearDistance
+	nearClippingWidth := nearClippingHeight * aspectRatio
+	farClippingHeight := 2.0 * math.Tan(w.Clipping.FieldOfView/2.0) * w.Clipping.FarDistance
+	farClippingWidth := farClippingHeight * aspectRatio
+
+	return ViewVolume{
+		NearClippingHeight: nearClippingHeight,
+		NearClippingWidth:  nearClippingWidth,
+		FarClippingHeight:  farClippingHeight,
+		FarClippingWidth:   farClippingWidth,
+	}
 }
 
 type Camera struct {
