@@ -10,8 +10,8 @@ import (
 func TestWorld_Transform_オブジェクトが原点に配置されている(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{X: 0, Y: 0, Z: -1.0},
-			Direction: Point3D{X: 0, Y: 0, Z: 0},
+			Location:  Point3D{0, 0, -1.0},
+			Direction: Point3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -20,7 +20,7 @@ func TestWorld_Transform_オブジェクトが原点に配置されている(t *
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{X: 0, Y: 0, Z: 0}},
+						{Point3D{0, 0, 0}},
 					},
 				},
 			},
@@ -44,8 +44,8 @@ func TestWorld_Transform_オブジェクトが原点に配置されている(t *
 func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{X: 0, Y: 0, Z: -1.0},
-			Direction: Point3D{X: 0, Y: 0, Z: 0},
+			Location:  Point3D{0, 0, -1.0},
+			Direction: Point3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -54,7 +54,7 @@ func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{X: 0, Y: 0, Z: 0}},
+						{Point3D{0, 0, 0}},
 					},
 				},
 			},
@@ -78,8 +78,8 @@ func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 func TestWorld_Transform_カメラの移動(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{X: 1.0, Y: -1.0, Z: -1.0}, // カメラを移動
-			Direction: Point3D{X: 0, Y: 0, Z: 0},
+			Location:  Point3D{1.0, -1.0, -1.0}, // カメラを移動
+			Direction: Point3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -88,7 +88,7 @@ func TestWorld_Transform_カメラの移動(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{X: 0, Y: 0, Z: 0}},
+						{Point3D{0, 0, 0}},
 					},
 				},
 			},
@@ -112,8 +112,8 @@ func TestWorld_Transform_カメラの移動(t *testing.T) {
 func TestWorld_Transform_カメラの向き(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{X: 0, Y: 0, Z: -1.0},
-			Direction: Point3D{X: math.Pi / 16, Y: 0, Z: 0}, // カメラの向きを変更（少し前傾にする）
+			Location:  Point3D{0, 0, -1.0},
+			Direction: Point3D{math.Pi / 16, 0, 0}, // カメラの向きを変更（少し前傾にする）
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -122,7 +122,7 @@ func TestWorld_Transform_カメラの向き(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{X: 0, Y: 0, Z: 0}},
+						{Point3D{0, 0, 0}},
 					},
 				},
 			},
@@ -146,8 +146,8 @@ func TestWorld_Transform_カメラの向き(t *testing.T) {
 func TestWorld_Transform_三角形のオブジェクト(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{X: 0, Y: 0, Z: -1.0},
-			Direction: Point3D{X: 0, Y: 0, Z: 0},
+			Location:  Point3D{0, 0, -1.0},
+			Direction: Point3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -156,9 +156,9 @@ func TestWorld_Transform_三角形のオブジェクト(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{X: -0.5, Y: 0.0, Z: 1.0}},
-						{Point3D{X: 0.5, Y: 0.0, Z: 1.0}},
-						{Point3D{X: 0.0, Y: 1.0, Z: 1.0}},
+						{Point3D{-0.5, 0.0, 1.0}},
+						{Point3D{0.5, 0.0, 1.0}},
+						{Point3D{0.0, 1.0, 1.0}},
 					},
 				},
 			},
@@ -204,42 +204,42 @@ func TestWorld_ViewVolume_基本的な計算(t *testing.T) {
 	assert.InDelta(t, 3.28, result.FarClippingWidth, 0.05)
 
 	// 手前・右上
-	assert.InDelta(t, 0.82, result.NearTopRight.X, 0.05)
-	assert.InDelta(t, 0.41, result.NearTopRight.Y, 0.05)
-	assert.InDelta(t, 1.0, result.NearTopRight.Z, 0.05)
+	assert.InDelta(t, 0.82, result.NearTopRight.X(), 0.05)
+	assert.InDelta(t, 0.41, result.NearTopRight.Y(), 0.05)
+	assert.InDelta(t, 1.0, result.NearTopRight.Z(), 0.05)
 
 	// 手前・左上
-	assert.InDelta(t, -0.82, result.NearTopLeft.X, 0.05)
-	assert.InDelta(t, 0.41, result.NearTopLeft.Y, 0.05)
-	assert.InDelta(t, 1.0, result.NearTopLeft.Z, 0.05)
+	assert.InDelta(t, -0.82, result.NearTopLeft.X(), 0.05)
+	assert.InDelta(t, 0.41, result.NearTopLeft.Y(), 0.05)
+	assert.InDelta(t, 1.0, result.NearTopLeft.Z(), 0.05)
 
 	// 手前・右下
-	assert.InDelta(t, 0.82, result.NearBottomRight.X, 0.05)
-	assert.InDelta(t, -0.41, result.NearBottomRight.Y, 0.05)
-	assert.InDelta(t, 1.0, result.NearBottomRight.Z, 0.05)
+	assert.InDelta(t, 0.82, result.NearBottomRight.X(), 0.05)
+	assert.InDelta(t, -0.41, result.NearBottomRight.Y(), 0.05)
+	assert.InDelta(t, 1.0, result.NearBottomRight.Z(), 0.05)
 
 	// 手前・左下
-	assert.InDelta(t, -0.82, result.NearBottomLeft.X, 0.05)
-	assert.InDelta(t, -0.41, result.NearBottomLeft.Y, 0.05)
-	assert.InDelta(t, 1.0, result.NearBottomLeft.Z, 0.05)
+	assert.InDelta(t, -0.82, result.NearBottomLeft.X(), 0.05)
+	assert.InDelta(t, -0.41, result.NearBottomLeft.Y(), 0.05)
+	assert.InDelta(t, 1.0, result.NearBottomLeft.Z(), 0.05)
 
 	// 奥・右上
-	assert.InDelta(t, 1.64, result.FarTopRight.X, 0.05)
-	assert.InDelta(t, 0.82, result.FarTopRight.Y, 0.05)
-	assert.InDelta(t, 2.0, result.FarTopRight.Z, 0.05)
+	assert.InDelta(t, 1.64, result.FarTopRight.X(), 0.05)
+	assert.InDelta(t, 0.82, result.FarTopRight.Y(), 0.05)
+	assert.InDelta(t, 2.0, result.FarTopRight.Z(), 0.05)
 
 	// 奥・左上
-	assert.InDelta(t, -1.64, result.FarTopLeft.X, 0.05)
-	assert.InDelta(t, 0.82, result.FarTopLeft.Y, 0.05)
-	assert.InDelta(t, 2.0, result.FarTopLeft.Z, 0.05)
+	assert.InDelta(t, -1.64, result.FarTopLeft.X(), 0.05)
+	assert.InDelta(t, 0.82, result.FarTopLeft.Y(), 0.05)
+	assert.InDelta(t, 2.0, result.FarTopLeft.Z(), 0.05)
 
 	// 奥・右下
-	assert.InDelta(t, 1.64, result.FarBottomRight.X, 0.05)
-	assert.InDelta(t, -0.82, result.FarBottomRight.Y, 0.05)
-	assert.InDelta(t, 2.0, result.FarBottomRight.Z, 0.05)
+	assert.InDelta(t, 1.64, result.FarBottomRight.X(), 0.05)
+	assert.InDelta(t, -0.82, result.FarBottomRight.Y(), 0.05)
+	assert.InDelta(t, 2.0, result.FarBottomRight.Z(), 0.05)
 
 	// 奥・左下
-	assert.InDelta(t, -1.64, result.FarBottomLeft.X, 0.05)
-	assert.InDelta(t, -0.82, result.FarBottomLeft.Y, 0.05)
-	assert.InDelta(t, 2.0, result.FarBottomLeft.Z, 0.05)
+	assert.InDelta(t, -1.64, result.FarBottomLeft.X(), 0.05)
+	assert.InDelta(t, -0.82, result.FarBottomLeft.Y(), 0.05)
+	assert.InDelta(t, 2.0, result.FarBottomLeft.Z(), 0.05)
 }

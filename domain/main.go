@@ -91,19 +91,28 @@ func (w World) ViewVolume() ViewVolume {
 	farClippingHeightHalf := farClippingHeight / 2
 	farClippingWidthHalf := farClippingWidth / 2
 
+	nearTopRight := Point3D{nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearTopLeft := Point3D{-nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearBottomRight := Point3D{nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearBottomLeft := Point3D{-nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
+	farTopRight := Point3D{farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
+	farTopLeft := Point3D{-farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
+	farBottomRight := Point3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
+	farBottomLeft := Point3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
+
 	return ViewVolume{
 		NearClippingHeight: nearClippingHeight,
 		NearClippingWidth:  nearClippingWidth,
 		FarClippingHeight:  farClippingHeight,
 		FarClippingWidth:   farClippingWidth,
-		NearTopRight:       Point3D{nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance},
-		NearTopLeft:        Point3D{-nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance},
-		NearBottomRight:    Point3D{nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance},
-		NearBottomLeft:     Point3D{-nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance},
-		FarTopRight:        Point3D{farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance},
-		FarTopLeft:         Point3D{-farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance},
-		FarBottomRight:     Point3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance},
-		FarBottomLeft:      Point3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance},
+		NearTopRight:       nearTopRight,
+		NearTopLeft:        nearTopLeft,
+		NearBottomRight:    nearBottomRight,
+		NearBottomLeft:     nearBottomLeft,
+		FarTopRight:        farTopRight,
+		FarTopLeft:         farTopLeft,
+		FarBottomRight:     farBottomRight,
+		FarBottomLeft:      farBottomLeft,
 	}
 }
 
