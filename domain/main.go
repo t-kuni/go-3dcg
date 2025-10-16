@@ -100,6 +100,8 @@ type Object struct {
 	Vertices []Vertex
 	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
 	Edges [][2]int
+	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
+	Triangles [][3]int
 }
 
 func (o Object) Matrix() mat.Dense {
@@ -145,6 +147,8 @@ type DiscreteObject struct {
 	Vertices []DiscretePoint2D
 	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
 	Edges [][2]int
+	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
+	Triangles [][3]int
 }
 
 func NewDiscreteObject() DiscreteObject {
