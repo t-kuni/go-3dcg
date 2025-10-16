@@ -68,6 +68,15 @@ type ViewVolume struct {
 	NearClippingHeight float64
 	FarClippingWidth   float64
 	FarClippingHeight  float64
+
+	NearTopRight    Point3D
+	NearTopLeft     Point3D
+	NearBottomRight Point3D
+	NearBottomLeft  Point3D
+	FarTopRight     Point3D
+	FarTopLeft      Point3D
+	FarBottomRight  Point3D
+	FarBottomLeft   Point3D
 }
 
 func (w World) ViewVolume() ViewVolume {
@@ -77,11 +86,24 @@ func (w World) ViewVolume() ViewVolume {
 	farClippingHeight := 2.0 * math.Tan(w.Clipping.FieldOfView/2.0) * w.Clipping.FarDistance
 	farClippingWidth := farClippingHeight * aspectRatio
 
+	nearClippingHeightHalf := nearClippingHeight / 2
+	nearClippingWidthHalf := nearClippingWidth / 2
+	farClippingHeightHalf := farClippingHeight / 2
+	farClippingWidthHalf := farClippingWidth / 2
+
 	return ViewVolume{
 		NearClippingHeight: nearClippingHeight,
 		NearClippingWidth:  nearClippingWidth,
 		FarClippingHeight:  farClippingHeight,
 		FarClippingWidth:   farClippingWidth,
+		NearTopRight:       Point3D{X: nearClippingWidthHalf, Y: nearClippingHeightHalf, Z: w.Clipping.NearDistance},
+		NearTopLeft:        Point3D{X: -nearClippingWidthHalf, Y: nearClippingHeightHalf, Z: w.Clipping.NearDistance},
+		NearBottomRight:    Point3D{X: nearClippingWidthHalf, Y: -nearClippingHeightHalf, Z: w.Clipping.NearDistance},
+		NearBottomLeft:     Point3D{X: -nearClippingWidthHalf, Y: -nearClippingHeightHalf, Z: w.Clipping.NearDistance},
+		FarTopRight:        Point3D{X: farClippingWidthHalf, Y: farClippingHeightHalf, Z: w.Clipping.FarDistance},
+		FarTopLeft:         Point3D{X: -farClippingWidthHalf, Y: farClippingHeightHalf, Z: w.Clipping.FarDistance},
+		FarBottomRight:     Point3D{X: farClippingWidthHalf, Y: -farClippingHeightHalf, Z: w.Clipping.FarDistance},
+		FarBottomLeft:      Point3D{X: -farClippingWidthHalf, Y: -farClippingHeightHalf, Z: w.Clipping.FarDistance},
 	}
 }
 
