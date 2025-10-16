@@ -15,18 +15,18 @@ const (
 func main() {
 	world := domain.World{
 		Camera: domain.Camera{
-			Location:  domain.Point3D{X: 0, Y: 0, Z: -1.0},
-			Direction: domain.Point3D{X: math.Pi / 16, Y: 0, Z: 0},
+			Location:  domain.Point3D{0, 0, -1.0},
+			Direction: domain.Point3D{math.Pi / 16, 0, 0},
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
 				X: 0, Y: 0, Z: 1,
 				Object: domain.Object{
 					Vertices: []domain.Vertex{
-						{Point3D: domain.Point3D{X: -1.0, Y: 0.0, Z: -0.5}},
-						{Point3D: domain.Point3D{X: 1.0, Y: 0.0, Z: -0.5}},
-						{Point3D: domain.Point3D{X: 0.0, Y: 0.0, Z: 0.5}},
-						{Point3D: domain.Point3D{X: 0.0, Y: 1.0, Z: 0.0}},
+						{Point3D: domain.Point3D{-1.0, 0.0, -0.5}},
+						{Point3D: domain.Point3D{1.0, 0.0, -0.5}},
+						{Point3D: domain.Point3D{0.0, 0.0, 0.5}},
+						{Point3D: domain.Point3D{0.0, 1.0, 0.0}},
 					},
 					Edges: [][2]int{
 						{0, 1},

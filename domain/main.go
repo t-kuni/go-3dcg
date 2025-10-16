@@ -40,8 +40,8 @@ func (w World) Transform() DiscreteWorld {
 		m = util.TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
 
 		// カメラ座標変換
-		m = util.TransformTranslate(m, -w.Camera.Location.X, -w.Camera.Location.Y, -w.Camera.Location.Z)
-		m = util.TransformRotate(m, -w.Camera.Direction.X, -w.Camera.Direction.Y, -w.Camera.Direction.Z)
+		m = util.TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
+		m = util.TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
 		// 投影変換
 		m = util.TransformParallelProjection(m)
@@ -96,14 +96,14 @@ func (w World) ViewVolume() ViewVolume {
 		NearClippingWidth:  nearClippingWidth,
 		FarClippingHeight:  farClippingHeight,
 		FarClippingWidth:   farClippingWidth,
-		NearTopRight:       Point3D{X: nearClippingWidthHalf, Y: nearClippingHeightHalf, Z: w.Clipping.NearDistance},
-		NearTopLeft:        Point3D{X: -nearClippingWidthHalf, Y: nearClippingHeightHalf, Z: w.Clipping.NearDistance},
-		NearBottomRight:    Point3D{X: nearClippingWidthHalf, Y: -nearClippingHeightHalf, Z: w.Clipping.NearDistance},
-		NearBottomLeft:     Point3D{X: -nearClippingWidthHalf, Y: -nearClippingHeightHalf, Z: w.Clipping.NearDistance},
-		FarTopRight:        Point3D{X: farClippingWidthHalf, Y: farClippingHeightHalf, Z: w.Clipping.FarDistance},
-		FarTopLeft:         Point3D{X: -farClippingWidthHalf, Y: farClippingHeightHalf, Z: w.Clipping.FarDistance},
-		FarBottomRight:     Point3D{X: farClippingWidthHalf, Y: -farClippingHeightHalf, Z: w.Clipping.FarDistance},
-		FarBottomLeft:      Point3D{X: -farClippingWidthHalf, Y: -farClippingHeightHalf, Z: w.Clipping.FarDistance},
+		NearTopRight:       Point3D{nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance},
+		NearTopLeft:        Point3D{-nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance},
+		NearBottomRight:    Point3D{nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance},
+		NearBottomLeft:     Point3D{-nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance},
+		FarTopRight:        Point3D{farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance},
+		FarTopLeft:         Point3D{-farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance},
+		FarBottomRight:     Point3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance},
+		FarBottomLeft:      Point3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance},
 	}
 }
 
@@ -129,7 +129,7 @@ type Object struct {
 func (o Object) Matrix() mat.Dense {
 	vertices := []float64{}
 	for _, vertex := range o.Vertices {
-		vertices = append(vertices, vertex.X, vertex.Y, vertex.Z, 1)
+		vertices = append(vertices, vertex.X(), vertex.Y(), vertex.Z(), 1)
 	}
 	return *mat.NewDense(len(o.Vertices), 4, vertices)
 }
@@ -138,12 +138,26 @@ type Vertex struct {
 	Point3D
 }
 
-type Point3D struct {
-	X, Y, Z float64
+type Point3D [3]float64
+
+func (p Point3D) X() float64 {
+	return p[0]
+}
+
+func (p Point3D) Y() float64 {
+	return p[1]
+}
+
+func (p Point3D) Z() float64 {
+	return p[2]
+}
+
+func (p Point3D) Vec() mat.VecDense {
+	return *mat.NewVecDense(3, p[:])
 }
 
 func (p Point3D) Matrix() mat.Dense {
-	return *mat.NewDense(1, 4, []float64{p.X, p.Y, p.Z, 1})
+	return *mat.NewDense(1, 4, append(p[:], 1))
 }
 
 type DiscreteWorld struct {
