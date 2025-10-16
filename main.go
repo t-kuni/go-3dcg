@@ -80,9 +80,9 @@ func render(dc *gg.Context, discreteWorld domain.DiscreteWorld) {
 
 		// Edgesに従って直線を描画
 		for _, edge := range edges {
-			if edge.From < len(vertices) && edge.To < len(vertices) {
-				start := vertices[edge.From]
-				end := vertices[edge.To]
+			if edge[0] < len(vertices) && edge[1] < len(vertices) {
+				start := vertices[edge[0]]
+				end := vertices[edge[1]]
 				dc.DrawLine(float64(start.X), float64(start.Y), float64(end.X), float64(end.Y))
 			}
 		}

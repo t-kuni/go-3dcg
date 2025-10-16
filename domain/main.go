@@ -98,7 +98,8 @@ type LocatedObject struct {
 
 type Object struct {
 	Vertices []Vertex
-	Edges    []Edge
+	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
+	Edges [][2]int
 }
 
 func (o Object) Matrix() mat.Dense {
@@ -111,13 +112,6 @@ func (o Object) Matrix() mat.Dense {
 
 type Vertex struct {
 	Point3D
-}
-
-type Edge struct {
-	// From 始点となる頂点の添字番号を保持
-	From int
-	// To 終点となる頂点の添字番号を保持
-	To int
 }
 
 type Point3D struct {
@@ -149,7 +143,8 @@ type DiscretePoint2D struct {
 
 type DiscreteObject struct {
 	Vertices []DiscretePoint2D
-	Edges    []Edge
+	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
+	Edges [][2]int
 }
 
 func NewDiscreteObject() DiscreteObject {
