@@ -1,4 +1,4 @@
-package util
+package domain
 
 import (
 	"math"
@@ -117,6 +117,47 @@ func TransformViewport(m mat.Dense, width, height int32, scaleRatio float64) mat
 	return m
 }
 
+// T は行列を転置します
 func T(m mat.Dense) mat.Dense {
 	return *mat.DenseCopyOf((&m).T())
+}
+
+// CalcNormalFromPoints は3つの点から法線ベクトルを計算します
+// 引数に渡す座標の順番で法線の表裏が変わるため注意する
+// 左手座標系なのでp2とp3を入れ替えてます。
+func CalcNormalFromPoints(p1, p2, p3 Point3D) Point3D {
+	p1v, p2v, p3v := p1.Vec(), p2.Vec(), p3.Vec()
+
+	v1 := mat.NewVecDense(3, nil)
+	v1.SubVec(&p3v, &p1v)
+
+	v2 := mat.NewVecDense(3, nil)
+	v2.SubVec(&p2v, &p1v)
+
+	normal := CrossVecDense(*v1, *v2)
+
+	normal = NormalizeVecDense(normal)
+
+	return Point3D(normal.RawVector().Data)
+}
+
+// CrossVecDense は2つのベクトルの外積を計算します
+func CrossVecDense(a, b mat.VecDense) mat.VecDense {
+	ax, ay, az := a.At(0, 0), a.At(1, 0), a.At(2, 0)
+	bx, by, bz := b.At(0, 0), b.At(1, 0), b.At(2, 0)
+	return *mat.NewVecDense(3, []float64{
+		ay*bz - az*by,
+		az*bx - ax*bz,
+		ax*by - ay*bx,
+	})
+}
+
+// NormalizeVecDense はベクトルを正規化します
+func NormalizeVecDense(v mat.VecDense) mat.VecDense {
+	norm := v.Norm(2)
+	return *mat.NewVecDense(3, []float64{
+		v.At(0, 0) / norm,
+		v.At(1, 0) / norm,
+		v.At(2, 0) / norm,
+	})
 }

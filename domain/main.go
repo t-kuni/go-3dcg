@@ -3,7 +3,6 @@ package domain
 import (
 	"math"
 
-	"github.com/t-kuni/go-3dcg/util"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -34,22 +33,22 @@ func (w World) Transform() DiscreteWorld {
 	for _, locatedObject := range w.LocatedObjects {
 		m := locatedObject.Object.Matrix()
 
-		m = util.T(m) // 転置(行列計算の次元を揃えるため)
+		m = T(m) // 転置(行列計算の次元を揃えるため)
 
 		// ワールド座標変換
-		m = util.TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
+		m = TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
 
 		// カメラ座標変換
-		m = util.TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
-		m = util.TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
+		m = TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
+		m = TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
 		// 投影変換
-		m = util.TransformParallelProjection(m)
+		m = TransformParallelProjection(m)
 
 		// ビューポート変換
-		m = util.TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
+		m = TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
 
-		m = util.T(m) // 転置を戻す
+		m = T(m) // 転置を戻す
 
 		rowCnt, _ := m.Dims()
 		obj := NewDiscreteObject()
@@ -64,11 +63,13 @@ func (w World) Transform() DiscreteWorld {
 }
 
 type ViewVolume struct {
+	// クリッピング面の幅と高さ
 	NearClippingWidth  float64
 	NearClippingHeight float64
 	FarClippingWidth   float64
 	FarClippingHeight  float64
 
+	// 頂点
 	NearTopRight    Point3D
 	NearTopLeft     Point3D
 	NearBottomRight Point3D
@@ -77,6 +78,14 @@ type ViewVolume struct {
 	FarTopLeft      Point3D
 	FarBottomRight  Point3D
 	FarBottomLeft   Point3D
+
+	// 法線
+	NearPlaneNormal   Point3D
+	FarPlaneNormal    Point3D
+	LeftPlaneNormal   Point3D
+	RightPlaneNormal  Point3D
+	BottomPlaneNormal Point3D
+	TopPlaneNormal    Point3D
 }
 
 func (w World) ViewVolume() ViewVolume {
@@ -100,6 +109,13 @@ func (w World) ViewVolume() ViewVolume {
 	farBottomRight := Point3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
 	farBottomLeft := Point3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
 
+	nearPlaneNormal := CalcNormalFromPoints(nearTopRight, nearTopLeft, nearBottomLeft)
+	farPlaneNormal := CalcNormalFromPoints(farTopLeft, farTopRight, farBottomRight)
+	leftPlaneNormal := CalcNormalFromPoints(nearTopLeft, farTopLeft, farBottomLeft)
+	rightPlaneNormal := CalcNormalFromPoints(farTopRight, nearTopRight, nearBottomRight)
+	bottomPlaneNormal := CalcNormalFromPoints(nearBottomLeft, farBottomLeft, farBottomRight)
+	topPlaneNormal := CalcNormalFromPoints(farTopRight, farTopLeft, nearTopLeft)
+
 	return ViewVolume{
 		NearClippingHeight: nearClippingHeight,
 		NearClippingWidth:  nearClippingWidth,
@@ -113,6 +129,12 @@ func (w World) ViewVolume() ViewVolume {
 		FarTopLeft:         farTopLeft,
 		FarBottomRight:     farBottomRight,
 		FarBottomLeft:      farBottomLeft,
+		NearPlaneNormal:    nearPlaneNormal,
+		FarPlaneNormal:     farPlaneNormal,
+		LeftPlaneNormal:    leftPlaneNormal,
+		RightPlaneNormal:   rightPlaneNormal,
+		BottomPlaneNormal:  bottomPlaneNormal,
+		TopPlaneNormal:     topPlaneNormal,
 	}
 }
 

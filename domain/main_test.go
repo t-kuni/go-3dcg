@@ -242,4 +242,34 @@ func TestWorld_ViewVolume_基本的な計算(t *testing.T) {
 	assert.InDelta(t, -1.64, result.FarBottomLeft.X(), 0.05)
 	assert.InDelta(t, -0.82, result.FarBottomLeft.Y(), 0.05)
 	assert.InDelta(t, 2.0, result.FarBottomLeft.Z(), 0.05)
+
+	// 法線・手前のクリップ面
+	assert.InDelta(t, 0, result.NearPlaneNormal.X(), 0.05)
+	assert.InDelta(t, 0, result.NearPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, -1, result.NearPlaneNormal.Z(), 0.05)
+
+	// 法線・奥のクリップ面
+	assert.InDelta(t, 0, result.FarPlaneNormal.X(), 0.05)
+	assert.InDelta(t, 0, result.FarPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, 1, result.FarPlaneNormal.Z(), 0.05)
+
+	// 法線・左のクリップ面
+	assert.InDelta(t, -0.77, result.LeftPlaneNormal.X(), 0.05)
+	assert.InDelta(t, 0, result.LeftPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, -0.63, result.LeftPlaneNormal.Z(), 0.05)
+
+	// 法線・右のクリップ面
+	assert.InDelta(t, 0.77, result.RightPlaneNormal.X(), 0.05)
+	assert.InDelta(t, 0, result.RightPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, -0.63, result.RightPlaneNormal.Z(), 0.05)
+
+	// 法線・下のクリップ面
+	assert.InDelta(t, 0, result.BottomPlaneNormal.X(), 0.05)
+	assert.InDelta(t, -0.93, result.BottomPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, -0.38, result.BottomPlaneNormal.Z(), 0.05)
+
+	// 法線・上のクリップ面
+	assert.InDelta(t, 0, result.TopPlaneNormal.X(), 0.05)
+	assert.InDelta(t, 0.93, result.TopPlaneNormal.Y(), 0.05)
+	assert.InDelta(t, -0.38, result.TopPlaneNormal.Z(), 0.05)
 }
