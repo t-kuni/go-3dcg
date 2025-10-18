@@ -11,9 +11,9 @@ func TestCalcNormalFromPoints(t *testing.T) {
 	// 正常系テストケース: 3つの点から法線ベクトルを計算
 	// 三角形の頂点: (0,0,0), (1,0,0), (0,1,0)
 	// この三角形の法線ベクトルは左ネジの法則に従い (0,0,-1) になるはず
-	p1 := Point3D{0, 0, 0}
-	p2 := Point3D{1, 0, 0}
-	p3 := Point3D{0, 1, 0}
+	p1 := Vector3D{0, 0, 0}
+	p2 := Vector3D{1, 0, 0}
+	p3 := Vector3D{0, 1, 0}
 
 	result := CalcNormalFromPoints(p1, p2, p3)
 
@@ -54,9 +54,9 @@ func TestClassifyEdgeByPlane(t *testing.T) {
 	// 平面: XY平面 (z = 0) の法線ベクトルは (0, 0, 1)
 	// 平面上の点: (0, 0, 0)
 	// テスト対象の点: (1, 1, -1) は平面の負の側にあるので true を返すはず
-	targetP := Point3D{1, 1, -1}
-	planeNormal := Point3D{0, 0, 1}
-	pInPlane := Point3D{0, 0, 0}
+	targetP := Vector3D{1, 1, -1}
+	planeNormal := Vector3D{0, 0, 1}
+	pInPlane := Vector3D{0, 0, 0}
 
 	result := ClassifyEdgeByPlane(targetP, planeNormal, pInPlane)
 

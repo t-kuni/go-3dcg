@@ -10,8 +10,8 @@ import (
 func TestWorld_Transform_オブジェクトが原点に配置されている(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{0, 0, -1.0},
-			Direction: Point3D{0, 0, 0},
+			Location:  Vector3D{0, 0, -1.0},
+			Direction: Vector3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -20,7 +20,7 @@ func TestWorld_Transform_オブジェクトが原点に配置されている(t *
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{0, 0, 0}},
+						{Vector3D{0, 0, 0}},
 					},
 				},
 			},
@@ -44,8 +44,8 @@ func TestWorld_Transform_オブジェクトが原点に配置されている(t *
 func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{0, 0, -1.0},
-			Direction: Point3D{0, 0, 0},
+			Location:  Vector3D{0, 0, -1.0},
+			Direction: Vector3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -54,7 +54,7 @@ func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{0, 0, 0}},
+						{Vector3D{0, 0, 0}},
 					},
 				},
 			},
@@ -78,8 +78,8 @@ func TestWorld_Transform_オブジェクトの移動(t *testing.T) {
 func TestWorld_Transform_カメラの移動(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{1.0, -1.0, -1.0}, // カメラを移動
-			Direction: Point3D{0, 0, 0},
+			Location:  Vector3D{1.0, -1.0, -1.0}, // カメラを移動
+			Direction: Vector3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -88,7 +88,7 @@ func TestWorld_Transform_カメラの移動(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{0, 0, 0}},
+						{Vector3D{0, 0, 0}},
 					},
 				},
 			},
@@ -112,8 +112,8 @@ func TestWorld_Transform_カメラの移動(t *testing.T) {
 func TestWorld_Transform_カメラの向き(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{0, 0, -1.0},
-			Direction: Point3D{math.Pi / 16, 0, 0}, // カメラの向きを変更（少し前傾にする）
+			Location:  Vector3D{0, 0, -1.0},
+			Direction: Vector3D{math.Pi / 16, 0, 0}, // カメラの向きを変更（少し前傾にする）
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -122,7 +122,7 @@ func TestWorld_Transform_カメラの向き(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{0, 0, 0}},
+						{Vector3D{0, 0, 0}},
 					},
 				},
 			},
@@ -146,8 +146,8 @@ func TestWorld_Transform_カメラの向き(t *testing.T) {
 func TestWorld_Transform_三角形のオブジェクト(t *testing.T) {
 	world := World{
 		Camera: Camera{
-			Location:  Point3D{0, 0, -1.0},
-			Direction: Point3D{0, 0, 0},
+			Location:  Vector3D{0, 0, -1.0},
+			Direction: Vector3D{0, 0, 0},
 		},
 		LocatedObjects: []LocatedObject{
 			{
@@ -156,9 +156,9 @@ func TestWorld_Transform_三角形のオブジェクト(t *testing.T) {
 				Z: 0.0,
 				Object: Object{
 					Vertices: []Vertex{
-						{Point3D{-0.5, 0.0, 1.0}},
-						{Point3D{0.5, 0.0, 1.0}},
-						{Point3D{0.0, 1.0, 1.0}},
+						{Vector3D{-0.5, 0.0, 1.0}},
+						{Vector3D{0.5, 0.0, 1.0}},
+						{Vector3D{0.0, 1.0, 1.0}},
 					},
 				},
 			},

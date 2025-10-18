@@ -125,7 +125,7 @@ func T(m mat.Dense) mat.Dense {
 // CalcNormalFromPoints は3つの点から法線ベクトルを計算します
 // 引数に渡す座標の順番で法線の表裏が変わるため注意する
 // 左手座標系なのでp2とp3を入れ替えてます。
-func CalcNormalFromPoints(p1, p2, p3 Point3D) Point3D {
+func CalcNormalFromPoints(p1, p2, p3 Vector3D) Vector3D {
 	p1v, p2v, p3v := p1.Vec(), p2.Vec(), p3.Vec()
 
 	v1 := mat.NewVecDense(3, nil)
@@ -138,7 +138,7 @@ func CalcNormalFromPoints(p1, p2, p3 Point3D) Point3D {
 
 	normal = NormalizeVecDense(normal)
 
-	return Point3D(normal.RawVector().Data)
+	return Vector3D(normal.RawVector().Data)
 }
 
 // CrossVecDense は2つのベクトルの外積を計算します
@@ -165,7 +165,7 @@ func NormalizeVecDense(v mat.VecDense) mat.VecDense {
 // ClassifyEdgeByPlane は点が平面のどちら側にあるかを判定します
 // planeNormalは平面の法線ベクトル
 // pInPlaneは平面の任意の点
-func ClassifyEdgeByPlane(targetP Point3D, planeNormal Point3D, pInPlane Point3D) bool {
+func ClassifyEdgeByPlane(targetP Vector3D, planeNormal Vector3D, pInPlane Vector3D) bool {
 	d := -(planeNormal[0]*pInPlane[0] + planeNormal[1]*pInPlane[1] + planeNormal[2]*pInPlane[2])
 	result := planeNormal[0]*targetP[0] + planeNormal[1]*targetP[1] + planeNormal[2]*targetP[2] + d
 	return result < 0

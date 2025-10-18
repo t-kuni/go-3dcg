@@ -70,22 +70,22 @@ type ViewVolume struct {
 	FarClippingHeight  float64
 
 	// 頂点
-	NearTopRight    Point3D
-	NearTopLeft     Point3D
-	NearBottomRight Point3D
-	NearBottomLeft  Point3D
-	FarTopRight     Point3D
-	FarTopLeft      Point3D
-	FarBottomRight  Point3D
-	FarBottomLeft   Point3D
+	NearTopRight    Vector3D
+	NearTopLeft     Vector3D
+	NearBottomRight Vector3D
+	NearBottomLeft  Vector3D
+	FarTopRight     Vector3D
+	FarTopLeft      Vector3D
+	FarBottomRight  Vector3D
+	FarBottomLeft   Vector3D
 
 	// 法線
-	NearPlaneNormal   Point3D
-	FarPlaneNormal    Point3D
-	LeftPlaneNormal   Point3D
-	RightPlaneNormal  Point3D
-	BottomPlaneNormal Point3D
-	TopPlaneNormal    Point3D
+	NearPlaneNormal   Vector3D
+	FarPlaneNormal    Vector3D
+	LeftPlaneNormal   Vector3D
+	RightPlaneNormal  Vector3D
+	BottomPlaneNormal Vector3D
+	TopPlaneNormal    Vector3D
 }
 
 func (w World) ViewVolume() ViewVolume {
@@ -100,14 +100,14 @@ func (w World) ViewVolume() ViewVolume {
 	farClippingHeightHalf := farClippingHeight / 2
 	farClippingWidthHalf := farClippingWidth / 2
 
-	nearTopRight := Point3D{nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
-	nearTopLeft := Point3D{-nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
-	nearBottomRight := Point3D{nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
-	nearBottomLeft := Point3D{-nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
-	farTopRight := Point3D{farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
-	farTopLeft := Point3D{-farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
-	farBottomRight := Point3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
-	farBottomLeft := Point3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
+	nearTopRight := Vector3D{nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearTopLeft := Vector3D{-nearClippingWidthHalf, nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearBottomRight := Vector3D{nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
+	nearBottomLeft := Vector3D{-nearClippingWidthHalf, -nearClippingHeightHalf, w.Clipping.NearDistance}
+	farTopRight := Vector3D{farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
+	farTopLeft := Vector3D{-farClippingWidthHalf, farClippingHeightHalf, w.Clipping.FarDistance}
+	farBottomRight := Vector3D{farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
+	farBottomLeft := Vector3D{-farClippingWidthHalf, -farClippingHeightHalf, w.Clipping.FarDistance}
 
 	nearPlaneNormal := CalcNormalFromPoints(nearTopRight, nearTopLeft, nearBottomLeft)
 	farPlaneNormal := CalcNormalFromPoints(farTopLeft, farTopRight, farBottomRight)
@@ -139,8 +139,8 @@ func (w World) ViewVolume() ViewVolume {
 }
 
 type Camera struct {
-	Location  Point3D
-	Direction Point3D
+	Location  Vector3D
+	Direction Vector3D
 	// Up        *mat.Dense
 }
 
@@ -166,28 +166,28 @@ func (o Object) Matrix() mat.Dense {
 }
 
 type Vertex struct {
-	Point3D
+	Vector3D
 }
 
-type Point3D [3]float64
+type Vector3D [3]float64
 
-func (p Point3D) X() float64 {
+func (p Vector3D) X() float64 {
 	return p[0]
 }
 
-func (p Point3D) Y() float64 {
+func (p Vector3D) Y() float64 {
 	return p[1]
 }
 
-func (p Point3D) Z() float64 {
+func (p Vector3D) Z() float64 {
 	return p[2]
 }
 
-func (p Point3D) Vec() mat.VecDense {
+func (p Vector3D) Vec() mat.VecDense {
 	return *mat.NewVecDense(3, p[:])
 }
 
-func (p Point3D) Matrix() mat.Dense {
+func (p Vector3D) Matrix() mat.Dense {
 	return *mat.NewDense(1, 4, append(p[:], 1))
 }
 
