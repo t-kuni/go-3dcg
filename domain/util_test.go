@@ -53,12 +53,22 @@ func TestClassifyEdgeByPlane(t *testing.T) {
 	// 正常系テストケース: 点が平面のどちら側にあるかを判定
 	// 平面: XY平面 (z = 0) の法線ベクトルは (0, 0, 1)
 	// 平面上の点: (0, 0, 0)
-	// テスト対象の点: (1, 1, -1) は平面の負の側にあるので true を返すはず
-	targetP := Vector3D{1, 1, -1}
+	// テスト対象の点: (0, 0, -1) は平面の負の側にあるので true を返すはず
+	targetP := Vector3D{0, 0, -0.1}
 	planeNormal := Vector3D{0, 0, 1}
 	pInPlane := Vector3D{0, 0, 0}
 
 	result := ClassifyEdgeByPlane(targetP, planeNormal, pInPlane)
 
 	assert.True(t, result)
+}
+
+func TestClassifyEdgeByPlane2(t *testing.T) {
+	targetP := Vector3D{0, 0, 0.1}
+	planeNormal := Vector3D{0, 0, 1}
+	pInPlane := Vector3D{0, 0, 0}
+
+	result := ClassifyEdgeByPlane(targetP, planeNormal, pInPlane)
+
+	assert.False(t, result)
 }
