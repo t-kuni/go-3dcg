@@ -161,3 +161,12 @@ func NormalizeVecDense(v mat.VecDense) mat.VecDense {
 		v.At(2, 0) / norm,
 	})
 }
+
+// ClassifyEdgeByPlane は点が平面のどちら側にあるかを判定します
+// planeNormalは平面の法線ベクトル
+// pInPlaneは平面の任意の点
+func ClassifyEdgeByPlane(targetP Point3D, planeNormal Point3D, pInPlane Point3D) bool {
+	d := -(planeNormal[0]*pInPlane[0] + planeNormal[1]*pInPlane[1] + planeNormal[2]*pInPlane[2])
+	result := planeNormal[0]*targetP[0] + planeNormal[1]*targetP[1] + planeNormal[2]*targetP[2] + d
+	return result < 0
+}

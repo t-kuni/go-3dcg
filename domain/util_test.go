@@ -48,3 +48,17 @@ func TestNormalizeVecDense(t *testing.T) {
 	assert.InDelta(t, 0.8, result.At(1, 0), 0.001)
 	assert.InDelta(t, 0, result.At(2, 0), 0.001)
 }
+
+func TestClassifyEdgeByPlane(t *testing.T) {
+	// 正常系テストケース: 点が平面のどちら側にあるかを判定
+	// 平面: XY平面 (z = 0) の法線ベクトルは (0, 0, 1)
+	// 平面上の点: (0, 0, 0)
+	// テスト対象の点: (1, 1, -1) は平面の負の側にあるので true を返すはず
+	targetP := Point3D{1, 1, -1}
+	planeNormal := Point3D{0, 0, 1}
+	pInPlane := Point3D{0, 0, 0}
+
+	result := ClassifyEdgeByPlane(targetP, planeNormal, pInPlane)
+
+	assert.True(t, result)
+}
