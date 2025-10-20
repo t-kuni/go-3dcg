@@ -170,3 +170,18 @@ func ClassifyEdgeByPlane(targetP Vector3D, planeNormal Vector3D, pInPlane Vector
 	result := planeNormal[0]*targetP[0] + planeNormal[1]*targetP[1] + planeNormal[2]*targetP[2] + d
 	return result < 0
 }
+
+// IntersectPlaneIntersectionPoint は平面と線分の交点を計算します
+func IntersectPlaneIntersectionPoint(planeNormal Vector3D, planePoint Vector3D, fromVertex, toVertex Vector3D) Vector3D {
+	d := -(planeNormal[0]*planePoint[0] + planeNormal[1]*planePoint[1] + planeNormal[2]*planePoint[2])
+
+	f := func(v Vector3D) float64 {
+		return v[0]*planeNormal[0] + v[1]*planeNormal[1] + v[2]*planeNormal[2] + d
+	}
+
+	t := -f(fromVertex) / (f(toVertex) - f(fromVertex))
+
+	p := fromVertex.Add(toVertex.Sub(fromVertex).Mul(t))
+
+	return p
+}

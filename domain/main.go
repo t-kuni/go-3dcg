@@ -138,6 +138,107 @@ func (w World) ViewVolume() ViewVolume {
 	}
 }
 
+func (v ViewVolume) PlaneNormal(clippingPlaneType ClippingPlaneType) Vector3D {
+	switch clippingPlaneType {
+	case Near:
+		return v.NearPlaneNormal
+	case Far:
+		return v.FarPlaneNormal
+	case Left:
+		return v.LeftPlaneNormal
+	case Right:
+		return v.RightPlaneNormal
+	case Bottom:
+		return v.BottomPlaneNormal
+	case Top:
+		return v.TopPlaneNormal
+	}
+	return Vector3D{}
+}
+
+func (v ViewVolume) PlanePoint(clippingPlaneType ClippingPlaneType) Vector3D {
+	switch clippingPlaneType {
+	case Near:
+		return v.NearTopLeft
+	case Far:
+		return v.FarTopLeft
+	case Left:
+		return v.NearTopLeft
+	case Right:
+		return v.NearTopRight
+	case Bottom:
+		return v.NearBottomLeft
+	case Top:
+		return v.NearTopLeft
+	}
+	return Vector3D{}
+}
+
+func (v ViewVolume) ClassifyEdgeByPlane(vertex Vertex, clippingPlaneType ClippingPlaneType) bool {
+	return ClassifyEdgeByPlane(vertex.Vector3D, v.PlaneNormal(clippingPlaneType), v.PlanePoint(clippingPlaneType))
+}
+
+type ClippingPlaneType int
+
+const (
+	Near ClippingPlaneType = iota
+	Far
+	Left
+	Right
+	Bottom
+	Top
+)
+
+func ClippingPlaneTypes() []ClippingPlaneType {
+	return []ClippingPlaneType{Near, Far, Left, Right, Bottom, Top}
+}
+
+type TmpPolygon struct {
+	Vertices [6]*Vertex
+}
+
+// func (v ViewVolume) Clip(o Object) Object {
+// 	for _, triangle := range o.Triangles {
+// 		vertices := [6]Vertex{o.Vertices[triangle[0]], o.Vertices[triangle[1]], o.Vertices[triangle[2]]}
+// 		verticesCount := 3
+
+// 		for _, clippingPlaneType := range ClippingPlaneTypes() {
+// 			for i := 0; i < verticesCount; i++ {
+// 				fromIndex := i
+// 				toIndex := (i + 1) % verticesCount
+
+// 				fromVertex := vertices[fromIndex]
+// 				toVertex := vertices[toIndex]
+
+// 				fromInside := v.ClassifyEdgeByPlane(fromVertex, clippingPlaneType)
+// 				toInside := v.ClassifyEdgeByPlane(toVertex, clippingPlaneType)
+
+// 				if fromInside && toInside {
+// 					// 内から内
+// 					vertices[toIndex] = toVertex
+// 				} else if fromInside && !toInside {
+// 					// 内から外
+
+// 				} else if !fromInside && toInside {
+// 					// 外から内
+// 					// 何もしない
+// 				} else {
+// 					// 外から外
+// 					// 何もしない
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return false
+// }
+
+// func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
+// 	planeNormal := v.PlaneNormal(clippingPlaneType)
+// 	planePoint := v.PlanePoint(clippingPlaneType)
+// 	return IntersectPlaneIntersectionPoint(planeNormal, planePoint, fromVertex, toVertex)
+// }
+
 type Camera struct {
 	Location  Vector3D
 	Direction Vector3D
@@ -157,6 +258,14 @@ type Object struct {
 	Triangles [][3]int
 }
 
+func NewObject() Object {
+	return Object{
+		Vertices:  []Vertex{},
+		Edges:     [][2]int{},
+		Triangles: [][3]int{},
+	}
+}
+
 func (o Object) Matrix() mat.Dense {
 	vertices := []float64{}
 	for _, vertex := range o.Vertices {
@@ -171,24 +280,36 @@ type Vertex struct {
 
 type Vector3D [3]float64
 
-func (p Vector3D) X() float64 {
-	return p[0]
+func (v1 Vector3D) X() float64 {
+	return v1[0]
 }
 
-func (p Vector3D) Y() float64 {
-	return p[1]
+func (v1 Vector3D) Y() float64 {
+	return v1[1]
 }
 
-func (p Vector3D) Z() float64 {
-	return p[2]
+func (v1 Vector3D) Z() float64 {
+	return v1[2]
 }
 
-func (p Vector3D) Vec() mat.VecDense {
-	return *mat.NewVecDense(3, p[:])
+func (v1 Vector3D) Vec() mat.VecDense {
+	return *mat.NewVecDense(3, v1[:])
 }
 
-func (p Vector3D) Matrix() mat.Dense {
-	return *mat.NewDense(1, 4, append(p[:], 1))
+func (v1 Vector3D) Matrix() mat.Dense {
+	return *mat.NewDense(1, 4, append(v1[:], 1))
+}
+
+func (v1 Vector3D) Add(v2 Vector3D) Vector3D {
+	return Vector3D{v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]}
+}
+
+func (v1 Vector3D) Sub(v2 Vector3D) Vector3D {
+	return Vector3D{v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]}
+}
+
+func (v1 Vector3D) Mul(v float64) Vector3D {
+	return Vector3D{v1[0] * v, v1[1] * v, v1[2] * v}
 }
 
 type DiscreteWorld struct {

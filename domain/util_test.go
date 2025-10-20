@@ -72,3 +72,21 @@ func TestClassifyEdgeByPlane2(t *testing.T) {
 
 	assert.False(t, result)
 }
+
+func TestIntersectPlaneIntersectionPoint(t *testing.T) {
+	// 正常系テストケース: XY平面（z = 0）と線分の交点を計算
+	// 平面: z = 0（法線ベクトル: (0, 0, 1)）
+	// 平面上の点: (0, 0, 0)
+	// 線分: 点A(0, 0, -1)から点B(0, 0, 1)への線分
+	// 期待される交点: (0, 0, 0)
+	planeNormal := Vector3D{0, 0, 1}
+	planePoint := Vector3D{0, 1, 0}
+	fromVertex := Vector3D{1, 0, -1}
+	toVertex := Vector3D{1, 0, 1}
+
+	result := IntersectPlaneIntersectionPoint(planeNormal, planePoint, fromVertex, toVertex)
+
+	assert.InDelta(t, 1, result.X(), 0.001)
+	assert.InDelta(t, 0, result.Y(), 0.001)
+	assert.InDelta(t, 0, result.Z(), 0.001)
+}
