@@ -174,8 +174,8 @@ func (v ViewVolume) PlanePoint(clippingPlaneType ClippingPlaneType) Vector3D {
 	return Vector3D{}
 }
 
-func (v ViewVolume) ClassifyEdgeByPlane(vertex Vertex, clippingPlaneType ClippingPlaneType) bool {
-	return ClassifyEdgeByPlane(vertex.Vector3D, v.PlaneNormal(clippingPlaneType), v.PlanePoint(clippingPlaneType))
+func (v ViewVolume) ClassifyEdgeByPlane(vertex Vector3D, clippingPlaneType ClippingPlaneType) bool {
+	return ClassifyEdgeByPlane(vertex, v.PlaneNormal(clippingPlaneType), v.PlanePoint(clippingPlaneType))
 }
 
 type ClippingPlaneType int
@@ -193,39 +193,88 @@ func ClippingPlaneTypes() []ClippingPlaneType {
 	return []ClippingPlaneType{Near, Far, Left, Right, Bottom, Top}
 }
 
-type TmpPolygon struct {
-	Vertices [6]*Vertex
+func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
+	work1Vertices := make([]Vector3D, 0, 10)
+	work1Vertices = append(work1Vertices, triangle[0])
+	work1Vertices = append(work1Vertices, triangle[1])
+	work1Vertices = append(work1Vertices, triangle[2])
+	work2Vertices := make([]Vector3D, 0, 10)
+
+	for _, clippingPlaneType := range ClippingPlaneTypes() {
+		for i := 0; i < len(work1Vertices); i++ {
+			fromIndex := i
+			toIndex := (i + 1) % len(work1Vertices)
+
+			fromVertex := work1Vertices[fromIndex]
+			toVertex := work1Vertices[toIndex]
+
+			fromInside := v.ClassifyEdgeByPlane(fromVertex, clippingPlaneType)
+			toInside := v.ClassifyEdgeByPlane(toVertex, clippingPlaneType)
+
+			if fromInside && toInside {
+				// 内から内
+				work2Vertices = append(work2Vertices, toVertex)
+			} else if fromInside && !toInside {
+				// 内から外
+				intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex, toVertex, clippingPlaneType)
+				work2Vertices = append(work2Vertices, intersectionPoint)
+			} else if !fromInside && toInside {
+				// 外から内
+				intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex, toVertex, clippingPlaneType)
+				work2Vertices = append(work2Vertices, intersectionPoint)
+				work2Vertices = append(work2Vertices, toVertex)
+			} else {
+				// 外から外
+				// 何もしない
+			}
+		}
+		work1Vertices = work2Vertices
+		work2Vertices = make([]Vector3D, 0, 10)
+	}
+
+	return work1Vertices
 }
 
 // func (v ViewVolume) Clip(o Object) Object {
+// 	newObject := NewObject()
+
 // 	for _, triangle := range o.Triangles {
-// 		vertices := [6]Vertex{o.Vertices[triangle[0]], o.Vertices[triangle[1]], o.Vertices[triangle[2]]}
-// 		verticesCount := 3
+// 		newVertices := make([]Vertex, 0, 10)
+// 		workVertices := make([]Vertex, 0, 10)
+// 		workVertices = append(workVertices, o.Vertices[triangle[0]])
+// 		workVertices = append(workVertices, o.Vertices[triangle[1]])
+// 		workVertices = append(workVertices, o.Vertices[triangle[2]])
 
 // 		for _, clippingPlaneType := range ClippingPlaneTypes() {
-// 			for i := 0; i < verticesCount; i++ {
+// 			for i := 0; i < len(workVertices); i++ {
 // 				fromIndex := i
-// 				toIndex := (i + 1) % verticesCount
+// 				toIndex := (i + 1) % len(workVertices)
 
-// 				fromVertex := vertices[fromIndex]
-// 				toVertex := vertices[toIndex]
+// 				fromVertex := workVertices[fromIndex]
+// 				toVertex := workVertices[toIndex]
 
 // 				fromInside := v.ClassifyEdgeByPlane(fromVertex, clippingPlaneType)
 // 				toInside := v.ClassifyEdgeByPlane(toVertex, clippingPlaneType)
 
 // 				if fromInside && toInside {
 // 					// 内から内
-// 					vertices[toIndex] = toVertex
+// 					newVertices = append(newVertices, toVertex)
 // 				} else if fromInside && !toInside {
 // 					// 内から外
-
+// 					intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex.Vector3D, toVertex.Vector3D, clippingPlaneType)
+// 					newVertices = append(newVertices, Vertex{Vector3D: intersectionPoint})
 // 				} else if !fromInside && toInside {
 // 					// 外から内
-// 					// 何もしない
+// 					newVertices = append(newVertices, toVertex)
+// 					intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex.Vector3D, toVertex.Vector3D, clippingPlaneType)
+// 					newVertices = append(newVertices, Vertex{Vector3D: intersectionPoint})
 // 				} else {
 // 					// 外から外
 // 					// 何もしない
 // 				}
+
+// 				newVertices = workVertices
+// 				workVertices = make([]Vertex, 0, 10)
 // 			}
 // 		}
 // 	}
@@ -233,11 +282,11 @@ type TmpPolygon struct {
 // 	return false
 // }
 
-// func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
-// 	planeNormal := v.PlaneNormal(clippingPlaneType)
-// 	planePoint := v.PlanePoint(clippingPlaneType)
-// 	return IntersectPlaneIntersectionPoint(planeNormal, planePoint, fromVertex, toVertex)
-// }
+func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
+	planeNormal := v.PlaneNormal(clippingPlaneType)
+	planePoint := v.PlanePoint(clippingPlaneType)
+	return IntersectPlaneIntersectionPoint(planeNormal, planePoint, fromVertex, toVertex)
+}
 
 type Camera struct {
 	Location  Vector3D
