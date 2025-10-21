@@ -236,17 +236,19 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 	return work1Vertices
 }
 
-// func (v ViewVolume) Clip(o Object) Object {
-// 	newObject := NewObject()
+func (v ViewVolume) Clip(o Object) Object {
+	newObject := NewObject()
 
-// 	for _, triangle := range o.Triangles {
-// 		vertices := v.SutherlandHodgman([3]Vector3D{o.Vertices[triangle[0]].Vector3D, o.Vertices[triangle[1]].Vector3D, o.Vertices[triangle[2]].Vector3D})
+	for _, triangle := range o.Triangles {
+		vertices := v.SutherlandHodgman([3]Vector3D{o.Vertices[triangle[0]].Vector3D, o.Vertices[triangle[1]].Vector3D, o.Vertices[triangle[2]].Vector3D})
+		triangles := Triangulate(vertices)
+		for _, triangle := range triangles {
+			newObject.AddTriangle(triangle)
+		}
+	}
 
-// 		if
-// 	}
-
-// 	return false
-// }
+	return newObject
+}
 
 func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
 	planeNormal := v.PlaneNormal(clippingPlaneType)
@@ -276,9 +278,9 @@ type Object struct {
 
 func NewObject() Object {
 	return Object{
-		Vertices:  []Vertex{},
-		Edges:     [][2]int{},
-		Triangles: [][3]int{},
+		Vertices:  make([]Vertex, 0, 50),
+		Edges:     make([][2]int, 0, 50),
+		Triangles: make([][3]int, 0, 50),
 	}
 }
 
@@ -288,6 +290,13 @@ func (o Object) Matrix() mat.Dense {
 		vertices = append(vertices, vertex.X(), vertex.Y(), vertex.Z(), 1)
 	}
 	return *mat.NewDense(len(o.Vertices), 4, vertices)
+}
+
+func (o *Object) AddTriangle(triangle [3]Vector3D) {
+	nextIndex := len(o.Vertices)
+	o.Vertices = append(o.Vertices, Vertex{Vector3D: triangle[0]}, Vertex{Vector3D: triangle[1]}, Vertex{Vector3D: triangle[2]})
+	o.Edges = append(o.Edges, [2]int{nextIndex, nextIndex + 1}, [2]int{nextIndex + 1, nextIndex + 2}, [2]int{nextIndex + 2, nextIndex})
+	o.Triangles = append(o.Triangles, [3]int{nextIndex, nextIndex + 1, nextIndex + 2})
 }
 
 type Vertex struct {

@@ -407,3 +407,28 @@ func TestViewVolume_SutherlandHodgman_ビューボリュームを覆う三角形
 	assert.InDelta(t, 0.62, result[3].Y(), 1e-2)
 	assert.InDelta(t, 1.5, result[3].Z(), 1e-2)
 }
+
+func TestObject_AddTriangle_正常系(t *testing.T) {
+	obj := NewObject()
+
+	triangle := [3]Vector3D{
+		{0.0, 0.0, 0.0},
+		{1.0, 0.0, 0.0},
+		{0.0, 1.0, 0.0},
+	}
+
+	obj.AddTriangle(triangle)
+
+	assert.Len(t, obj.Vertices, 3)
+	assert.Equal(t, Vector3D{0.0, 0.0, 0.0}, obj.Vertices[0].Vector3D)
+	assert.Equal(t, Vector3D{1.0, 0.0, 0.0}, obj.Vertices[1].Vector3D)
+	assert.Equal(t, Vector3D{0.0, 1.0, 0.0}, obj.Vertices[2].Vector3D)
+
+	assert.Len(t, obj.Edges, 3)
+	assert.Equal(t, [2]int{0, 1}, obj.Edges[0])
+	assert.Equal(t, [2]int{1, 2}, obj.Edges[1])
+	assert.Equal(t, [2]int{2, 0}, obj.Edges[2])
+
+	assert.Len(t, obj.Triangles, 1)
+	assert.Equal(t, [3]int{0, 1, 2}, obj.Triangles[0])
+}
