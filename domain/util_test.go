@@ -90,3 +90,80 @@ func TestIntersectPlaneIntersectionPoint(t *testing.T) {
 	assert.InDelta(t, 0, result.Y(), 0.001)
 	assert.InDelta(t, 0, result.Z(), 0.001)
 }
+
+func TestTriangulate_LessThanThreeVertices(t *testing.T) {
+	// 頂点が3つ未満の場合のテストケース
+	// 空のスライスや2つの頂点の場合、空の三角形配列が返されるべき
+
+	// 空のスライスの場合
+	emptyVertices := []Vector3D{}
+	result := Triangulate(emptyVertices)
+	assert.Equal(t, [][3]Vector3D{}, result)
+
+	// 1つの頂点の場合
+	oneVertex := []Vector3D{{0, 0, 0}}
+	result = Triangulate(oneVertex)
+	assert.Equal(t, [][3]Vector3D{}, result)
+
+	// 2つの頂点の場合
+	twoVertices := []Vector3D{{0, 0, 0}, {1, 0, 0}}
+	result = Triangulate(twoVertices)
+	assert.Equal(t, [][3]Vector3D{}, result)
+}
+
+func TestTriangulate_ExactlyThreeVertices(t *testing.T) {
+	// 頂点がちょうど3つの場合のテストケース
+	// そのまま1つの三角形として返されるべき
+	vertices := []Vector3D{
+		{0, 0, 0},
+		{1, 0, 0},
+		{0, 1, 0},
+	}
+
+	result := Triangulate(vertices)
+
+	expected := [][3]Vector3D{{
+		{0, 0, 0},
+		{1, 0, 0},
+		{0, 1, 0},
+	}}
+
+	assert.Equal(t, expected, result)
+	assert.Len(t, result, 1)
+}
+
+func TestTriangulate_MoreThanThreeVertices(t *testing.T) {
+	// 頂点が4つ以上の場合のテストケース（ファン三角化）
+	// 四角形を2つの三角形に分割することを確認
+	vertices := []Vector3D{
+		{0, 0, 0}, // 中心点
+		{1, 0, 0}, // 右
+		{1, 1, 0}, // 右上
+		{0, 1, 0}, // 上
+	}
+
+	result := Triangulate(vertices)
+
+	// 4つの頂点から2つの三角形が生成されるべき
+	// 三角形1: vertices[0], vertices[1], vertices[2]
+	// 三角形2: vertices[0], vertices[2], vertices[3]
+	expected := [][3]Vector3D{
+		{{0, 0, 0}, {1, 0, 0}, {1, 1, 0}},
+		{{0, 0, 0}, {1, 1, 0}, {0, 1, 0}},
+	}
+
+	assert.Equal(t, expected, result)
+	assert.Len(t, result, 2)
+
+	// 一般的なケース：5つの頂点から3つの三角形が生成される
+	fiveVertices := []Vector3D{
+		{0, 0, 0},
+		{1, 0, 0},
+		{2, 1, 0},
+		{1, 2, 0},
+		{0, 1, 0},
+	}
+
+	fiveResult := Triangulate(fiveVertices)
+	assert.Len(t, fiveResult, 3) // n-2 = 5-2 = 3つの三角形
+}

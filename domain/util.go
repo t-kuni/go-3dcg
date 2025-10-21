@@ -187,5 +187,17 @@ func IntersectPlaneIntersectionPoint(planeNormal Vector3D, planePoint Vector3D, 
 	return p
 }
 
-// func Triangulate(vertices []Vector3D) [][3]Vector3D {
-// }
+// Triangulate は多角形を三角形に分割します
+func Triangulate(vertices []Vector3D) [][3]Vector3D {
+	if len(vertices) < 3 {
+		return [][3]Vector3D{}
+	} else if len(vertices) == 3 {
+		return [][3]Vector3D{{vertices[0], vertices[1], vertices[2]}}
+	} else {
+		triangles := make([][3]Vector3D, 0, len(vertices)-2)
+		for i := 1; i < len(vertices)-1; i++ {
+			triangles = append(triangles, [3]Vector3D{vertices[0], vertices[i], vertices[i+1]})
+		}
+		return triangles
+	}
+}

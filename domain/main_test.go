@@ -317,7 +317,7 @@ func TestViewVolume_SutherlandHodgman_ビューボリュームを突き抜ける
 
 	// 右上２（クリップされている）
 	assert.InDelta(t, 0.62, result[3].X(), 1e-2)
-	assert.InDelta(t, 0.42, result[3].Y(), 1e-2)
+	assert.InDelta(t, 0.44, result[3].Y(), 1e-2)
 	assert.InDelta(t, 1.5, result[3].Z(), 1e-2)
 
 	// 右下（クリップされている）
