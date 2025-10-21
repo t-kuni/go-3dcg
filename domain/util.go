@@ -124,6 +124,7 @@ func T(m mat.Dense) mat.Dense {
 
 // CalcNormalFromPoints は3つの点から法線ベクトルを計算します
 // 引数に渡す座標の順番で法線の表裏が変わるため注意する
+// 法線方向は右ねじの法則で判別できます。
 // 左手座標系なのでp2とp3を入れ替えてます。
 func CalcNormalFromPoints(p1, p2, p3 Vector3D) Vector3D {
 	p1v, p2v, p3v := p1.Vec(), p2.Vec(), p3.Vec()
@@ -185,3 +186,6 @@ func IntersectPlaneIntersectionPoint(planeNormal Vector3D, planePoint Vector3D, 
 
 	return p
 }
+
+// func Triangulate(vertices []Vector3D) [][3]Vector3D {
+// }

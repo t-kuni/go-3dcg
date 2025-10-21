@@ -220,6 +220,7 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 				work2Vertices = append(work2Vertices, intersectionPoint)
 			} else if !fromInside && toInside {
 				// 外から内
+				// 先に交点を追加する。その後、内側の頂点を追加する。（反時計周りの頂点の順番を維持するため）
 				intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex, toVertex, clippingPlaneType)
 				work2Vertices = append(work2Vertices, intersectionPoint)
 				work2Vertices = append(work2Vertices, toVertex)
@@ -239,44 +240,9 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 // 	newObject := NewObject()
 
 // 	for _, triangle := range o.Triangles {
-// 		newVertices := make([]Vertex, 0, 10)
-// 		workVertices := make([]Vertex, 0, 10)
-// 		workVertices = append(workVertices, o.Vertices[triangle[0]])
-// 		workVertices = append(workVertices, o.Vertices[triangle[1]])
-// 		workVertices = append(workVertices, o.Vertices[triangle[2]])
+// 		vertices := v.SutherlandHodgman([3]Vector3D{o.Vertices[triangle[0]].Vector3D, o.Vertices[triangle[1]].Vector3D, o.Vertices[triangle[2]].Vector3D})
 
-// 		for _, clippingPlaneType := range ClippingPlaneTypes() {
-// 			for i := 0; i < len(workVertices); i++ {
-// 				fromIndex := i
-// 				toIndex := (i + 1) % len(workVertices)
-
-// 				fromVertex := workVertices[fromIndex]
-// 				toVertex := workVertices[toIndex]
-
-// 				fromInside := v.ClassifyEdgeByPlane(fromVertex, clippingPlaneType)
-// 				toInside := v.ClassifyEdgeByPlane(toVertex, clippingPlaneType)
-
-// 				if fromInside && toInside {
-// 					// 内から内
-// 					newVertices = append(newVertices, toVertex)
-// 				} else if fromInside && !toInside {
-// 					// 内から外
-// 					intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex.Vector3D, toVertex.Vector3D, clippingPlaneType)
-// 					newVertices = append(newVertices, Vertex{Vector3D: intersectionPoint})
-// 				} else if !fromInside && toInside {
-// 					// 外から内
-// 					newVertices = append(newVertices, toVertex)
-// 					intersectionPoint := v.IntersectPlaneIntersectionPoint(fromVertex.Vector3D, toVertex.Vector3D, clippingPlaneType)
-// 					newVertices = append(newVertices, Vertex{Vector3D: intersectionPoint})
-// 				} else {
-// 					// 外から外
-// 					// 何もしない
-// 				}
-
-// 				newVertices = workVertices
-// 				workVertices = make([]Vertex, 0, 10)
-// 			}
-// 		}
+// 		if
 // 	}
 
 // 	return false
@@ -304,6 +270,7 @@ type Object struct {
 	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
 	Edges [][2]int
 	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
+	// 右ねじの法則に従って法線の方向が決まります。
 	Triangles [][3]int
 }
 
