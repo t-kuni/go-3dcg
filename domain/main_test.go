@@ -441,9 +441,15 @@ func TestVertexGrid_AddVertex_正常系(t *testing.T) {
 	v2 := Vector3D{1.2, 2.2, 3.2}    // epsilon以上離れているため追加される頂点
 	v3 := Vector3D{1.05, 2.05, 3.05} // epsilon以内の座標は追加されない頂点
 
-	vg.AddVertex(v1)
-	vg.AddVertex(v2)
-	vg.AddVertex(v3)
+	existSameLocation, _ := vg.AddVertex(v1)
+	assert.False(t, existSameLocation)
+
+	existSameLocation, _ = vg.AddVertex(v2)
+	assert.False(t, existSameLocation)
+
+	existSameLocation, sameLocationVertexIndex := vg.AddVertex(v3)
+	assert.True(t, existSameLocation)
+	assert.Equal(t, 0, sameLocationVertexIndex)
 
 	assert.Len(t, vg.vertices, 2)
 	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, vg.vertices[0].Vector3D)

@@ -292,47 +292,25 @@ func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
 	return false, 0
 }
 
-func (vg *VertexGrid) AddVertex(v Vector3D) {
-	existSameLocation, _ := vg.SearchVertex(v)
+// AddVertex は頂点を追加します。同じ位置にある頂点が存在する場合はtrueを返します。
+// 同じ位置にある頂点が存在する場合はその頂点のインデックスを返します。
+func (vg *VertexGrid) AddVertex(v Vector3D) (bool, int) {
+	existSameLocation, sameLocationVertexIndex := vg.SearchVertex(v)
 	if !existSameLocation {
 		nextIndex := len(vg.vertices)
 		gridKey := vg.makeKey(v)
 		vg.grid[gridKey] = append(vg.grid[gridKey], nextIndex)
 		vg.vertices = append(vg.vertices, Vertex{Vector3D: v})
 	}
+	return existSameLocation, sameLocationVertexIndex
 }
 
 // func (v ViewVolume) MargeVertices(o Object) Object {
-// 	newObject := NewObject()
-
-// 	grid := make(map[[3]int][]int)
-// 	epsilon := 1e-2
-
-// 	makeKey := func(v Vector3D) [3]int {
-// 		return [3]int{int(math.Floor(v[0] / epsilon)), int(math.Floor(v[1] / epsilon)), int(math.Floor(v[2] / epsilon))}
-// 	}
-
-// 	searchVertex := func(v Vector3D) (bool, int) {
-// 	}
-
-// 	newVertices := make([]Vertex, 0, len(o.Vertices))
-// 	// newEdges := make([][2]int, 0, len(o.Edges))
-// 	// newTriangles := make([][3]int, 0, len(o.Triangles))
+// 	grid := NewVertexGrid(1e-2)
 
 // 	vertexMap := make(map[int]int, 50)
 // 	for i, vertex := range o.Vertices {
-// 		v := vertex.Vector3D
-// 		existSameLocation, sameLocationVertexIndex := searchVertex(v)
-// 		if existSameLocation {
-// 			// 同じ位置にある頂点が存在する
-// 			vertexMap[i] = sameLocationVertexIndex
-// 		} else {
-// 			// 同じ位置にある頂点が存在しない
-// 			nextNewVertexIndex := len(newVertices)
-// 			gridKey := makeKey(vertex.Vector3D)
-// 			grid[gridKey] = append(grid[gridKey], nextNewVertexIndex)
-// 			newVertices = append(newVertices, vertex)
-// 		}
+// 		grid.AddVertex(vertex.Vector3D)
 // 	}
 // }
 
