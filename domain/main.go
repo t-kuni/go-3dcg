@@ -293,7 +293,7 @@ func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
 }
 
 // AddVertex は頂点を追加します。
-// 追加した頂点のインデックスを返します。
+// 追加した頂点の新しい添字番号を返します。
 func (vg *VertexGrid) AddVertex(v Vector3D) int {
 	existSameLocation, sameLocationVertexIndex := vg.SearchVertex(v)
 	if existSameLocation {
@@ -307,35 +307,30 @@ func (vg *VertexGrid) AddVertex(v Vector3D) int {
 	}
 }
 
-// func (v ViewVolume) MargeVertices(o Object) Object {
-// 	grid := NewVertexGrid(1e-2)
+func (v ViewVolume) MargeVertices(o Object) Object {
+	grid := NewVertexGrid(1e-2)
 
-// 	vertexMap := make(map[int]int, 50)
-// 	for i, vertex := range o.Vertices {
-// 		existSameLocation, sameLocationVertexIndex := grid.AddVertex(vertex.Vector3D)
-// 		if existSameLocation {
-// 			vertexMap[i] = sameLocationVertexIndex
-// 		} else {
-// 			vertexMap[i] = i
-// 		}
-// 	}
+	vertexMap := make(map[int]int, 50)
+	for i, vertex := range o.Vertices {
+		vertexMap[i] = grid.AddVertex(vertex.Vector3D)
+	}
 
-// 	newEdges := make([][2]int, 0, len(o.Edges))
-// 	for _, edge := range o.Edges {
-// 		newEdges = append(newEdges, [2]int{vertexMap[edge[0]], vertexMap[edge[1]]})
-// 	}
+	newEdges := make([][2]int, 0, len(o.Edges))
+	for _, edge := range o.Edges {
+		newEdges = append(newEdges, [2]int{vertexMap[edge[0]], vertexMap[edge[1]]})
+	}
 
-// 	newTriangles := make([][3]int, 0, len(o.Triangles))
-// 	for _, triangle := range o.Triangles {
-// 		newTriangles = append(newTriangles, [3]int{vertexMap[triangle[0]], vertexMap[triangle[1]], vertexMap[triangle[2]]})
-// 	}
+	newTriangles := make([][3]int, 0, len(o.Triangles))
+	for _, triangle := range o.Triangles {
+		newTriangles = append(newTriangles, [3]int{vertexMap[triangle[0]], vertexMap[triangle[1]], vertexMap[triangle[2]]})
+	}
 
-// 	return Object{
-// 		Vertices:  grid.Vertices(),
-// 		Edges:     CleanEdges(newEdges),
-// 		Triangles: CleanTriangles(newTriangles),
-// 	}
-// }
+	return Object{
+		Vertices:  grid.Vertices(),
+		Edges:     CleanEdges(newEdges),
+		Triangles: CleanTriangles(newTriangles),
+	}
+}
 
 func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
 	planeNormal := v.PlaneNormal(clippingPlaneType)
