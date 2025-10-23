@@ -167,3 +167,52 @@ func TestTriangulate_MoreThanThreeVertices(t *testing.T) {
 	fiveResult := Triangulate(fiveVertices)
 	assert.Len(t, fiveResult, 3) // n-2 = 5-2 = 3つの三角形
 }
+
+func TestCleanEdges(t *testing.T) {
+	// 正常系テストケース: 重複と無効な辺をクリーンアップ
+	// 入力: 重複する辺、同じ頂点への辺を含む辺のリスト
+	// 期待結果: 重複と無効な辺が除去された辺のリスト
+	edges := [][2]int{
+		{0, 1}, // 有効な辺
+		{1, 2}, // 有効な辺
+		{0, 1}, // 重複する辺（除去されるべき）
+		{3, 3}, // 同じ頂点への辺（除去されるべき）
+		{2, 3}, // 有効な辺
+	}
+
+	result := CleanEdges(edges)
+
+	expected := [][2]int{
+		{0, 1},
+		{1, 2},
+		{2, 3},
+	}
+
+	assert.Equal(t, expected, result)
+	assert.Len(t, result, 3)
+}
+
+func TestCleanTriangles(t *testing.T) {
+	// 正常系テストケース: 重複と無効な三角形をクリーンアップ
+	// 入力: 重複する三角形、同じ頂点を持つ三角形を含む三角形のリスト
+	// 期待結果: 重複と無効な三角形が除去された三角形のリスト
+	triangles := [][3]int{
+		{0, 1, 2}, // 有効な三角形
+		{1, 2, 3}, // 有効な三角形
+		{0, 1, 2}, // 重複する三角形（除去されるべき）
+		{4, 4, 5}, // 同じ頂点を持つ三角形（除去されるべき）
+		{2, 3, 4}, // 有効な三角形
+		{5, 6, 5}, // 同じ頂点を持つ三角形（除去されるべき）
+	}
+
+	result := CleanTriangles(triangles)
+
+	expected := [][3]int{
+		{0, 1, 2},
+		{1, 2, 3},
+		{2, 3, 4},
+	}
+
+	assert.Equal(t, expected, result)
+	assert.Len(t, result, 3)
+}

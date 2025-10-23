@@ -310,7 +310,28 @@ func (vg *VertexGrid) AddVertex(v Vector3D) (bool, int) {
 
 // 	vertexMap := make(map[int]int, 50)
 // 	for i, vertex := range o.Vertices {
-// 		grid.AddVertex(vertex.Vector3D)
+// 		existSameLocation, sameLocationVertexIndex := grid.AddVertex(vertex.Vector3D)
+// 		if existSameLocation {
+// 			vertexMap[i] = sameLocationVertexIndex
+// 		} else {
+// 			vertexMap[i] = i
+// 		}
+// 	}
+
+// 	newEdges := make([][2]int, 0, len(o.Edges))
+// 	for _, edge := range o.Edges {
+// 		newEdges = append(newEdges, [2]int{vertexMap[edge[0]], vertexMap[edge[1]]})
+// 	}
+
+// 	newTriangles := make([][3]int, 0, len(o.Triangles))
+// 	for _, triangle := range o.Triangles {
+// 		newTriangles = append(newTriangles, [3]int{vertexMap[triangle[0]], vertexMap[triangle[1]], vertexMap[triangle[2]]})
+// 	}
+
+// 	return Object{
+// 		Vertices:  grid.Vertices(),
+// 		Edges:     CleanEdges(newEdges),
+// 		Triangles: CleanTriangles(newTriangles),
 // 	}
 // }
 

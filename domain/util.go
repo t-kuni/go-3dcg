@@ -201,3 +201,47 @@ func Triangulate(vertices []Vector3D) [][3]Vector3D {
 		return triangles
 	}
 }
+
+func CleanEdges(edges [][2]int) [][2]int {
+	newEdges := make([][2]int, 0, len(edges))
+	existMap := make(map[[2]int]bool, len(edges))
+
+	for _, edge := range edges {
+		if edge[0] == edge[1] {
+			// 同じ頂点への辺は破棄する
+			continue
+		}
+
+		if _, ok := existMap[edge]; ok {
+			// 重複する辺は破棄する
+			continue
+		}
+
+		existMap[edge] = true
+		newEdges = append(newEdges, edge)
+	}
+
+	return newEdges
+}
+
+func CleanTriangles(triangles [][3]int) [][3]int {
+	newTriangles := make([][3]int, 0, len(triangles))
+	existMap := make(map[[3]int]bool, len(triangles))
+
+	for _, triangle := range triangles {
+		if triangle[0] == triangle[1] || triangle[1] == triangle[2] || triangle[2] == triangle[0] {
+			// ３つの頂点の添字のうち、同じ添字を持っているものは破棄する
+			continue
+		}
+
+		if _, ok := existMap[triangle]; ok {
+			// 重複する三角形は破棄する
+			continue
+		}
+
+		existMap[triangle] = true
+		newTriangles = append(newTriangles, triangle)
+	}
+
+	return newTriangles
+}
