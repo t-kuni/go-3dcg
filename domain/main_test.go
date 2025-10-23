@@ -441,15 +441,14 @@ func TestVertexGrid_AddVertex_正常系(t *testing.T) {
 	v2 := Vector3D{1.2, 2.2, 3.2}    // epsilon以上離れているため追加される頂点
 	v3 := Vector3D{1.05, 2.05, 3.05} // epsilon以内の座標は追加されない頂点
 
-	existSameLocation, _ := vg.AddVertex(v1)
-	assert.False(t, existSameLocation)
+	idx := vg.AddVertex(v1)
+	assert.Equal(t, 0, idx)
 
-	existSameLocation, _ = vg.AddVertex(v2)
-	assert.False(t, existSameLocation)
+	idx = vg.AddVertex(v2)
+	assert.Equal(t, 1, idx)
 
-	existSameLocation, sameLocationVertexIndex := vg.AddVertex(v3)
-	assert.True(t, existSameLocation)
-	assert.Equal(t, 0, sameLocationVertexIndex)
+	idx = vg.AddVertex(v3)
+	assert.Equal(t, 0, idx)
 
 	assert.Len(t, vg.vertices, 2)
 	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, vg.vertices[0].Vector3D)
@@ -471,3 +470,42 @@ func TestVertexGrid_SearchVertex(t *testing.T) {
 	isExist, _ = vg.SearchVertex(Vector3D{10.0, 20.0, 30.0})
 	assert.False(t, isExist)
 }
+
+// func TestViewVolume_MargeVertices_正常系(t *testing.T) {
+// 	viewVolume := ViewVolume{}
+
+// 	// 重複する頂点を含むオブジェクトを作成
+// 	// epsilon=1e-2なので、0.01以内の差は同じ頂点として扱われる
+// 	obj := Object{
+// 		Vertices: []Vertex{
+// 			{Vector3D{1.0, 2.0, 3.0}},       // インデックス0
+// 			{Vector3D{4.0, 5.0, 6.0}},       // インデックス1
+// 			{Vector3D{1.005, 2.005, 3.005}}, // インデックス2 (0と同じ位置として扱われる)
+// 			{Vector3D{7.0, 8.0, 9.0}},       // インデックス3
+// 		},
+// 		Edges: [][2]int{
+// 			{0, 1},
+// 			{1, 2},
+// 			{2, 3},
+// 			{3, 0},
+// 		},
+// 		Triangles: [][3]int{
+// 			{0, 1, 2},
+// 			{1, 2, 3},
+// 		},
+// 	}
+
+// 	result := viewVolume.MargeVertices(obj)
+
+// 	// 重複する頂点がマージされて3つの頂点になることを確認
+// 	assert.Len(t, result.Vertices, 3)
+
+// 	// 元の頂点の位置が保持されていることを確認
+// 	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, result.Vertices[0].Vector3D)
+// 	assert.Equal(t, Vector3D{4.0, 5.0, 6.0}, result.Vertices[1].Vector3D)
+// 	assert.Equal(t, Vector3D{7.0, 8.0, 9.0}, result.Vertices[2].Vector3D)
+
+// 	// エッジとトライアングルの数は変わらないが、インデックスが適切にマップされている
+// 	assert.Len(t, result.Edges, 4)
+// 	assert.Len(t, result.Triangles, 2)
+// }

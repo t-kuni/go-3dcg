@@ -292,17 +292,19 @@ func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
 	return false, 0
 }
 
-// AddVertex は頂点を追加します。同じ位置にある頂点が存在する場合はtrueを返します。
-// 同じ位置にある頂点が存在する場合はその頂点のインデックスを返します。
-func (vg *VertexGrid) AddVertex(v Vector3D) (bool, int) {
+// AddVertex は頂点を追加します。
+// 追加した頂点のインデックスを返します。
+func (vg *VertexGrid) AddVertex(v Vector3D) int {
 	existSameLocation, sameLocationVertexIndex := vg.SearchVertex(v)
-	if !existSameLocation {
+	if existSameLocation {
+		return sameLocationVertexIndex
+	} else {
 		nextIndex := len(vg.vertices)
 		gridKey := vg.makeKey(v)
 		vg.grid[gridKey] = append(vg.grid[gridKey], nextIndex)
 		vg.vertices = append(vg.vertices, Vertex{Vector3D: v})
+		return nextIndex
 	}
-	return existSameLocation, sameLocationVertexIndex
 }
 
 // func (v ViewVolume) MargeVertices(o Object) Object {
