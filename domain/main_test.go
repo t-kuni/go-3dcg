@@ -432,3 +432,36 @@ func TestObject_AddTriangle_正常系(t *testing.T) {
 	assert.Len(t, obj.Triangles, 1)
 	assert.Equal(t, [3]int{0, 1, 2}, obj.Triangles[0])
 }
+
+func TestVertexGrid_AddVertex_正常系(t *testing.T) {
+	epsilon := 0.1
+	vg := NewVertexGrid(epsilon)
+
+	v1 := Vector3D{1.0, 2.0, 3.0}
+	v2 := Vector3D{1.2, 2.2, 3.2}    // epsilon以上離れているため追加される頂点
+	v3 := Vector3D{1.05, 2.05, 3.05} // epsilon以内の座標は追加されない頂点
+
+	vg.AddVertex(v1)
+	vg.AddVertex(v2)
+	vg.AddVertex(v3)
+
+	assert.Len(t, vg.vertices, 2)
+	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, vg.vertices[0].Vector3D)
+	assert.Equal(t, Vector3D{1.2, 2.2, 3.2}, vg.vertices[1].Vector3D)
+}
+
+func TestVertexGrid_SearchVertex(t *testing.T) {
+	vg := NewVertexGrid(0.1)
+
+	v1 := Vector3D{1.0, 2.0, 3.0}
+	vg.AddVertex(v1)
+
+	// 同じ位置の頂点を検索
+	isExist, index := vg.SearchVertex(Vector3D{1.0, 2.0, 3.0})
+	assert.True(t, isExist)
+	assert.Equal(t, 0, index)
+
+	// 存在しない頂点を検索
+	isExist, _ = vg.SearchVertex(Vector3D{10.0, 20.0, 30.0})
+	assert.False(t, isExist)
+}

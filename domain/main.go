@@ -250,6 +250,92 @@ func (v ViewVolume) Clip(o Object) Object {
 	return newObject
 }
 
+type VertexGrid struct {
+	grid     map[[3]int][]int
+	vertices []Vertex
+	epsilon  float64
+}
+
+func NewVertexGrid(epsilon float64) VertexGrid {
+	return VertexGrid{
+		grid:     make(map[[3]int][]int),
+		vertices: make([]Vertex, 0, 50),
+		epsilon:  epsilon,
+	}
+}
+
+func (vg VertexGrid) Vertices() []Vertex {
+	return vg.vertices
+}
+
+func (vg VertexGrid) makeKey(v Vector3D) [3]int {
+	return [3]int{int(math.Floor(v[0] / vg.epsilon)), int(math.Floor(v[1] / vg.epsilon)), int(math.Floor(v[2] / vg.epsilon))}
+}
+
+func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
+	baseGridKey := vg.makeKey(v)
+	for _, dx := range []int{0, 1, -1} {
+		for _, dy := range []int{0, 1, -1} {
+			for _, dz := range []int{0, 1, -1} {
+				gridKey := [3]int{baseGridKey[0] + dx, baseGridKey[1] + dy, baseGridKey[2] + dz}
+				if candidateVertexIndexes, ok := vg.grid[gridKey]; ok {
+					for _, candidateVertexIndex := range candidateVertexIndexes {
+						candidateVertex := vg.vertices[candidateVertexIndex].Vector3D
+						if v.Distance(candidateVertex) < vg.epsilon {
+							return true, candidateVertexIndex
+						}
+					}
+				}
+			}
+		}
+	}
+	return false, 0
+}
+
+func (vg *VertexGrid) AddVertex(v Vector3D) {
+	existSameLocation, _ := vg.SearchVertex(v)
+	if !existSameLocation {
+		nextIndex := len(vg.vertices)
+		gridKey := vg.makeKey(v)
+		vg.grid[gridKey] = append(vg.grid[gridKey], nextIndex)
+		vg.vertices = append(vg.vertices, Vertex{Vector3D: v})
+	}
+}
+
+// func (v ViewVolume) MargeVertices(o Object) Object {
+// 	newObject := NewObject()
+
+// 	grid := make(map[[3]int][]int)
+// 	epsilon := 1e-2
+
+// 	makeKey := func(v Vector3D) [3]int {
+// 		return [3]int{int(math.Floor(v[0] / epsilon)), int(math.Floor(v[1] / epsilon)), int(math.Floor(v[2] / epsilon))}
+// 	}
+
+// 	searchVertex := func(v Vector3D) (bool, int) {
+// 	}
+
+// 	newVertices := make([]Vertex, 0, len(o.Vertices))
+// 	// newEdges := make([][2]int, 0, len(o.Edges))
+// 	// newTriangles := make([][3]int, 0, len(o.Triangles))
+
+// 	vertexMap := make(map[int]int, 50)
+// 	for i, vertex := range o.Vertices {
+// 		v := vertex.Vector3D
+// 		existSameLocation, sameLocationVertexIndex := searchVertex(v)
+// 		if existSameLocation {
+// 			// 同じ位置にある頂点が存在する
+// 			vertexMap[i] = sameLocationVertexIndex
+// 		} else {
+// 			// 同じ位置にある頂点が存在しない
+// 			nextNewVertexIndex := len(newVertices)
+// 			gridKey := makeKey(vertex.Vector3D)
+// 			grid[gridKey] = append(grid[gridKey], nextNewVertexIndex)
+// 			newVertices = append(newVertices, vertex)
+// 		}
+// 	}
+// }
+
 func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
 	planeNormal := v.PlaneNormal(clippingPlaneType)
 	planePoint := v.PlanePoint(clippingPlaneType)
@@ -335,6 +421,10 @@ func (v1 Vector3D) Sub(v2 Vector3D) Vector3D {
 
 func (v1 Vector3D) Mul(v float64) Vector3D {
 	return Vector3D{v1[0] * v, v1[1] * v, v1[2] * v}
+}
+
+func (v1 Vector3D) Distance(v2 Vector3D) float64 {
+	return math.Sqrt(math.Pow(v1[0]-v2[0], 2) + math.Pow(v1[1]-v2[1], 2) + math.Pow(v1[2]-v2[2], 2))
 }
 
 type DiscreteWorld struct {
