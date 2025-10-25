@@ -247,7 +247,7 @@ func (v ViewVolume) Clip(o Object) Object {
 		}
 	}
 
-	return newObject
+	return v.MargeVertices(newObject)
 }
 
 type VertexGrid struct {

@@ -562,3 +562,101 @@ func TestViewVolume_MargeVertices_頂点がマージされること２(t *testin
 	assert.Equal(t, [3]int{0, 1, 2}, result.Triangles[0])
 	assert.Equal(t, [3]int{0, 1, 3}, result.Triangles[1])
 }
+
+func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T) {
+	// 右上・奥　の頂点が消失している問題
+
+	world := World{
+		Viewport: Viewport{
+			Width:  100,
+			Height: 100,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
+
+	viewVolume := world.ViewVolume()
+
+	// 上・右・奥に突き抜ける三角形を作成
+	// 法線は外向き
+	obj := Object{
+		Vertices: []Vertex{
+			{Vector3D{0.0, 0.0, 1.5}},  // 下
+			{Vector3D{0.0, 10.0, 1.5}}, // 上
+			{Vector3D{0.0, 0.0, 10.0}}, // 奥
+			{Vector3D{10.0, 0, 1.5}},   // 右下
+		},
+		Edges: [][2]int{
+			{0, 1},
+			{0, 2},
+			{0, 3},
+			{1, 2},
+			{1, 3},
+			{2, 3},
+		},
+		Triangles: [][3]int{
+			// 法線の向きに注意（右ねじの法則）
+			{0, 1, 2},
+			{0, 3, 1},
+			{0, 2, 3},
+			{3, 2, 1}, // 消失する面
+		},
+	}
+
+	result := viewVolume.Clip(obj)
+
+	// クリッピングされずに三角形が保持されることを確認
+	assert.Len(t, result.Vertices, 7)
+	assert.InDelta(t, 0.0, result.Vertices[0].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.82, result.Vertices[0].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices[0].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, result.Vertices[1].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices[1].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices[1].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, result.Vertices[2].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices[2].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices[2].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, result.Vertices[3].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices[3].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices[3].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.62, result.Vertices[4].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices[4].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices[4].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.62, result.Vertices[5].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices[5].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices[5].Vector3D.Z(), 1e-2)
+
+	assert.InDelta(t, 0.82, result.Vertices[6].Vector3D.X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices[6].Vector3D.Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices[6].Vector3D.Z(), 1e-2)
+
+	assert.Len(t, result.Edges, 12)
+	assert.Equal(t, [2]int{0, 1}, result.Edges[0])
+	assert.Equal(t, [2]int{1, 2}, result.Edges[1])
+	assert.Equal(t, [2]int{2, 0}, result.Edges[2])
+	assert.Equal(t, [2]int{2, 3}, result.Edges[3])
+	assert.Equal(t, [2]int{3, 0}, result.Edges[4])
+	assert.Equal(t, [2]int{2, 4}, result.Edges[5])
+	assert.Equal(t, [2]int{4, 3}, result.Edges[6])
+	assert.Equal(t, [2]int{4, 5}, result.Edges[7])
+	assert.Equal(t, [2]int{5, 3}, result.Edges[8])
+	assert.Equal(t, [2]int{1, 6}, result.Edges[9])
+	assert.Equal(t, [2]int{6, 4}, result.Edges[10])
+	assert.Equal(t, [2]int{4, 1}, result.Edges[11])
+
+	assert.Len(t, result.Triangles, 6)
+	assert.Equal(t, [3]int{0, 1, 2}, result.Triangles[0])
+	assert.Equal(t, [3]int{0, 2, 3}, result.Triangles[1])
+	assert.Equal(t, [3]int{3, 2, 4}, result.Triangles[2])
+	assert.Equal(t, [3]int{3, 4, 5}, result.Triangles[3])
+	assert.Equal(t, [3]int{1, 6, 4}, result.Triangles[4])
+	assert.Equal(t, [3]int{1, 4, 2}, result.Triangles[5])
+}
