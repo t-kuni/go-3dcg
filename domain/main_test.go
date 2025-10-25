@@ -604,7 +604,7 @@ func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T
 		},
 	}
 
-	result := viewVolume.Clip(obj)
+	result := viewVolume.ClipObject(obj)
 
 	// クリッピングされずに三角形が保持されることを確認
 	assert.Len(t, result.Vertices, 7)

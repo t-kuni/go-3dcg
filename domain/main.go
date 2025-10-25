@@ -236,7 +236,7 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 	return work1Vertices
 }
 
-func (v ViewVolume) Clip(o Object) Object {
+func (v ViewVolume) ClipObject(o Object) Object {
 	newObject := NewObject()
 
 	for _, triangle := range o.Triangles {
