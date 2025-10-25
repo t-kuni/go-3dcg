@@ -564,8 +564,6 @@ func TestViewVolume_MargeVertices_頂点がマージされること２(t *testin
 }
 
 func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T) {
-	// 右上・奥　の頂点が消失している問題
-
 	world := World{
 		Viewport: Viewport{
 			Width:  100,
@@ -652,6 +650,7 @@ func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T
 	assert.Equal(t, [2]int{6, 4}, result.Edges[10])
 	assert.Equal(t, [2]int{4, 1}, result.Edges[11])
 
+	// 法線の向きが外向きであること（右ねじの法則）
 	assert.Len(t, result.Triangles, 6)
 	assert.Equal(t, [3]int{0, 1, 2}, result.Triangles[0])
 	assert.Equal(t, [3]int{0, 2, 3}, result.Triangles[1])
