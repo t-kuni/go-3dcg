@@ -88,12 +88,13 @@ func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Obj
 	zn := w.Clipping.NearDistance
 	zf := w.Clipping.FarDistance
 
-	// 左手座標系なので[3][2]要素は符号が反転している
+	// 左手座標系なので一般的な式
+	// https://www.notion.so/t-kuni/28fb12fb627480edb34ff2935f5392d5?v=28fb12fb6274802ead99000c2486b3bf&source=copy_link#297b12fb627480dca89bcb0709acc844
 	projectionMatrix := mat.NewDense(4, 4, []float64{
 		1 / (aspect * tan), 0, 0, 0, // X軸
 		0, 1 / tan, 0, 0, // Y軸
-		0, 0, (zf + zn) / (zn - zf), (2 * zf * zf) / (zn - zf), // Z軸
-		0, 0, 1, 1, // 同次座標
+		0, 0, zf / (zf - zn), -(zf * zn) / (zf - zn), // Z軸
+		0, 0, 1, 0, // 同次座標
 	})
 
 	var projected mat.Dense
@@ -103,9 +104,9 @@ func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Obj
 	_, colCnt := projected.Dims()
 	for colIdx := 0; colIdx < colCnt; colIdx++ {
 		w := projected.At(3, colIdx)
-		projected.Set(0, colIdx, m.At(0, colIdx)/w)
-		projected.Set(1, colIdx, m.At(1, colIdx)/w)
-		projected.Set(2, colIdx, m.At(2, colIdx)/w)
+		projected.Set(0, colIdx, projected.At(0, colIdx)/w)
+		projected.Set(1, colIdx, projected.At(1, colIdx)/w)
+		projected.Set(2, colIdx, projected.At(2, colIdx)/w)
 		projected.Set(3, colIdx, 1)
 	}
 

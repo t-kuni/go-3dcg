@@ -677,10 +677,10 @@ func TestWorld_TransformPerspectiveProjection_正常系(t *testing.T) {
 	locatedObject := LocatedObject{
 		Object: Object{
 			Vertices: []Vertex{
-				{Vector3D: Vector3D{-0.3, 0.0, 1.1}}, // 左下
-				{Vector3D: Vector3D{0.3, 0.0, 1.1}},  // 右下
+				{Vector3D: Vector3D{-0.3, 0.0, 1.5}}, // 左下
+				{Vector3D: Vector3D{0.3, 0.0, 1.5}},  // 右下
 				{Vector3D: Vector3D{0.0, 0.0, 1.9}},  // 奥
-				{Vector3D: Vector3D{0.0, 0.3, 1.1}},  // 上
+				{Vector3D: Vector3D{0.0, 0.3, 1.5}},  // 上
 			},
 			Edges: [][2]int{
 				{0, 1},
