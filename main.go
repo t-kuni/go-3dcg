@@ -19,7 +19,25 @@ type Game struct {
 }
 
 func (g *Game) Update() error {
-	// フレーム毎の更新処理（今回は特になし）
+	// キー入力によるカメラ移動
+	if ebiten.IsKeyPressed(ebiten.KeyW) {
+		g.world.Camera.Location[2] += 0.1
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.world.Camera.Location[2] -= 0.1
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.world.Camera.Location[0] += 0.1
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyA) {
+		g.world.Camera.Location[0] -= 0.1
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		g.world.Camera.Location[1] += 0.1
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyF) {
+		g.world.Camera.Location[1] -= 0.1
+	}
 	return nil
 }
 
@@ -96,8 +114,8 @@ func main() {
 			ScaleRatio: 0.5,
 		},
 		Clipping: domain.Clipping{
-			NearDistance: 1.0,
-			FarDistance:  2.0,
+			NearDistance: 0.1,
+			FarDistance:  10.0,
 			FieldOfView:  math.Pi / 4,
 		},
 	}
