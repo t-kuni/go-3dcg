@@ -1,16 +1,61 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"math"
 
-	"github.com/fogleman/gg"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/t-kuni/go-3dcg/domain"
 )
 
 const (
 	width, height int32 = 800, 600
 )
+
+type Game struct {
+	world domain.World
+}
+
+func (g *Game) Update() error {
+	// フレーム毎の更新処理（今回は特になし）
+	return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	// 3D世界を2D座標に変換
+	discreteWorld := g.world.Transform()
+
+	// 画面をクリア（背景色を白に設定）
+	screen.Fill(color.RGBA{255, 255, 255, 255})
+
+	// 各DiscreteObjectについて、Edgesに従って直線を描画
+	for _, discreteObject := range discreteWorld.DiscreteObjects {
+		vertices := discreteObject.Vertices
+		edges := discreteObject.Edges
+
+		// Edgesに従って直線を描画
+		for _, edge := range edges {
+			if edge[0] < len(vertices) && edge[1] < len(vertices) {
+				start := vertices[edge[0]]
+				end := vertices[edge[1]]
+				vector.StrokeLine(
+					screen,
+					float32(start.X), float32(start.Y),
+					float32(end.X), float32(end.Y),
+					1,
+					color.RGBA{0, 0, 0, 255}, // 黒色
+					false,
+				)
+			}
+		}
+	}
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return int(width), int(height)
+}
 
 func main() {
 	world := domain.World{
@@ -57,48 +102,14 @@ func main() {
 		},
 	}
 
-	// 3D世界を2D座標に変換
-	discreteWorld := world.Transform()
-
-	// 画像コンテキストを作成
-	dc := gg.NewContext(int(width), int(height))
-
-	// 画像をレンダリング
-	render(dc, discreteWorld)
-
-	// 画像ファイルとして保存
-	err := dc.SavePNG("render.png")
-	if err != nil {
-		log.Fatalf("画像の保存に失敗しました: %s", err)
+	game := &Game{
+		world: world,
 	}
 
-	log.Println("render.png を出力しました")
-}
+	ebiten.SetWindowSize(int(width), int(height))
+	ebiten.SetWindowTitle("3D CG with Ebiten")
 
-func render(dc *gg.Context, discreteWorld domain.DiscreteWorld) {
-	// 背景色を白に設定
-	dc.SetRGB(1, 1, 1)
-	dc.Clear()
-
-	// 線の色を黒に設定
-	dc.SetRGB(0, 0, 0)
-	dc.SetLineWidth(1)
-
-	// 各DiscreteObjectについて、Edgesに従って直線を描画
-	for _, discreteObject := range discreteWorld.DiscreteObjects {
-		vertices := discreteObject.Vertices
-		edges := discreteObject.Edges
-
-		// Edgesに従って直線を描画
-		for _, edge := range edges {
-			if edge[0] < len(vertices) && edge[1] < len(vertices) {
-				start := vertices[edge[0]]
-				end := vertices[edge[1]]
-				dc.DrawLine(float64(start.X), float64(start.Y), float64(end.X), float64(end.Y))
-			}
-		}
+	if err := ebiten.RunGame(game); err != nil {
+		log.Fatal(err)
 	}
-
-	// 描画を実行
-	dc.Stroke()
 }
