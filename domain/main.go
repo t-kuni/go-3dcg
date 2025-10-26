@@ -14,8 +14,10 @@ type World struct {
 }
 
 type Viewport struct {
-	Width      int32
-	Height     int32
+	Width  int32
+	Height int32
+	// 実数値の単位座標(1.0f)を「画面の短辺」の{scaleRatio}%分、拡大する
+	// 短辺が100でScaleRatioが0.25なら、100*0.25=25となり、1.0fが25pxとなる
 	ScaleRatio float64
 }
 
@@ -42,8 +44,8 @@ func (w World) Transform() DiscreteWorld {
 		m = TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
 		m = TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
-		// 投影変換
-		m = TransformParallelProjection(m)
+		// 透視投影
+		o, m := w.TransformPerspectiveProjection(locatedObject, m)
 
 		// ビューポート変換
 		m = TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
@@ -52,9 +54,11 @@ func (w World) Transform() DiscreteWorld {
 
 		rowCnt, _ := m.Dims()
 		obj := NewDiscreteObject()
-		obj.Edges = locatedObject.Object.Edges
+		obj.Edges = o.Edges
 		for r := 0; r < rowCnt; r++ {
-			obj.AddVertex(DiscretePoint2D{X: int32(math.Round(m.At(r, 0))), Y: int32(math.Round(m.At(r, 1)))})
+			rx := m.At(r, 0)
+			ry := m.At(r, 1)
+			obj.AddVertex(DiscretePoint2D{X: int32(math.Round(rx)), Y: int32(math.Round(ry))})
 		}
 		discreateWorld.AddObject(obj)
 	}
@@ -62,40 +66,51 @@ func (w World) Transform() DiscreteWorld {
 	return discreateWorld
 }
 
-// // TransformPerspectiveProjection 透視変換を行う
-// func (w World) TransformPerspectiveProjection(m mat.Dense) mat.Dense {
-// 	viewVolume := w.ViewVolume()
+// TransformPerspectiveProjection 透視変換を行う
+// 引数oのVerticesは無視される
+// 引数mをVerticesとして扱う。mは転置されて4行N列になっている。
+func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Object, mat.Dense) {
+	newObject := Object{
+		Vertices:  DenseToVertices(m),
+		Edges:     o.Object.Edges,
+		Triangles: o.Object.Triangles,
+	}
 
-// 	viewVolume.ClipObject(m)
+	viewVolume := w.ViewVolume()
+	clippedObject := viewVolume.ClipObject(newObject)
 
-// 	aspect := float64(w.Viewport.Width) / float64(w.Viewport.Height)
-// 	tan := math.Tan(w.Clipping.FieldOfView / 2.0)
+	// クリッピング後のオブジェクトから行列を取得し、転置する
+	m = T(clippedObject.Matrix())
 
-// 	zn := w.Clipping.NearDistance
-// 	zf := w.Clipping.FarDistance
+	aspect := float64(w.Viewport.Width) / float64(w.Viewport.Height)
+	tan := math.Tan(w.Clipping.FieldOfView / 2.0)
 
-// 	// 左手座標系なので[3][2]要素は符号が反転している
-// 	projectionMatrix := mat.NewDense(4, 4, []float64{
-// 		1 / (aspect * tan), 0, 0, 0, // X軸
-// 		0, 1 / tan, 0, 0, // Y軸
-// 		0, 0, (zf + zn) / (zn - zf), (2 * zf * zf) / (zn - zf), // Z軸
-// 		0, 0, 1, 1, // 同次座標
-// 	})
+	zn := w.Clipping.NearDistance
+	zf := w.Clipping.FarDistance
 
-// 	var projected mat.Dense
-// 	projected.Mul(projectionMatrix, &m)
+	// 左手座標系なので[3][2]要素は符号が反転している
+	projectionMatrix := mat.NewDense(4, 4, []float64{
+		1 / (aspect * tan), 0, 0, 0, // X軸
+		0, 1 / tan, 0, 0, // Y軸
+		0, 0, (zf + zn) / (zn - zf), (2 * zf * zf) / (zn - zf), // Z軸
+		0, 0, 1, 1, // 同次座標
+	})
 
-// 	// mは転置されて4行N列になっている
-// 	_, colCnt := m.Dims()
-// 	for colIdx := 0; colIdx < colCnt; colIdx++ {
-// 		w := m.At(3, colIdx)
-// 		projected.Set(0, colIdx, m.At(0, colIdx)/w)
-// 		projected.Set(1, colIdx, m.At(1, colIdx)/w)
-// 		projected.Set(2, colIdx, m.At(2, colIdx)/w)
-// 	}
+	var projected mat.Dense
+	projected.Mul(projectionMatrix, &m)
 
-// 	return projected
-// }
+	// mは転置されて4行N列になっている
+	_, colCnt := projected.Dims()
+	for colIdx := 0; colIdx < colCnt; colIdx++ {
+		w := projected.At(3, colIdx)
+		projected.Set(0, colIdx, m.At(0, colIdx)/w)
+		projected.Set(1, colIdx, m.At(1, colIdx)/w)
+		projected.Set(2, colIdx, m.At(2, colIdx)/w)
+		projected.Set(3, colIdx, 1)
+	}
+
+	return clippedObject, projected
+}
 
 type ViewVolume struct {
 	// クリッピング面の幅と高さ

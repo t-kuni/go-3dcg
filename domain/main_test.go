@@ -659,3 +659,112 @@ func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T
 	assert.Equal(t, [3]int{1, 6, 4}, result.Triangles[4])
 	assert.Equal(t, [3]int{1, 4, 2}, result.Triangles[5])
 }
+
+func TestWorld_TransformPerspectiveProjection_正常系(t *testing.T) {
+	world := World{
+		Viewport: Viewport{
+			Width:  100,
+			Height: 100,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
+
+	// ビューボリューム内の三角形オブジェクトを作成
+	locatedObject := LocatedObject{
+		Object: Object{
+			Vertices: []Vertex{
+				{Vector3D: Vector3D{-0.3, 0.0, 1.1}}, // 左下
+				{Vector3D: Vector3D{0.3, 0.0, 1.1}},  // 右下
+				{Vector3D: Vector3D{0.0, 0.0, 1.9}},  // 奥
+				{Vector3D: Vector3D{0.0, 0.3, 1.1}},  // 上
+			},
+			Edges: [][2]int{
+				{0, 1},
+				{0, 2},
+				{0, 3},
+				{1, 2},
+				{1, 3},
+				{2, 3},
+			},
+			Triangles: [][3]int{
+				{0, 1, 2},
+				{0, 1, 3},
+				{0, 2, 3},
+				{1, 2, 3},
+			},
+		},
+	}
+
+	// 透視変換用の行列を作成（転置済み）
+	m := locatedObject.Object.Matrix()
+	m = T(m) // 転置(4行N列になる)
+
+	// 透視変換を実行
+	resultObject, resultMatrix := world.TransformPerspectiveProjection(locatedObject, m)
+
+	// 結果の検証
+	assert.Len(t, resultObject.Vertices, 4)
+	assert.Len(t, resultObject.Edges, 6)
+	assert.Len(t, resultObject.Triangles, 4)
+
+	rowCnt, colCnt := resultMatrix.Dims()
+	assert.Equal(t, 4, rowCnt)
+	assert.Equal(t, 4, colCnt)
+}
+
+func TestWorld_Transform_正常系(t *testing.T) {
+	world := World{
+		Camera: Camera{
+			Location:  Vector3D{0, 0, 0},
+			Direction: Vector3D{0, 0, 0},
+		},
+		LocatedObjects: []LocatedObject{
+			{
+				X: 0, Y: 0, Z: 0,
+				Object: Object{
+					Vertices: []Vertex{
+						{Vector3D: Vector3D{-0.3, 0.0, 1.1}}, // 左下
+						{Vector3D: Vector3D{0.3, 0.0, 1.1}},  // 右下
+						{Vector3D: Vector3D{0.0, 0.0, 1.9}},  // 奥
+						{Vector3D: Vector3D{0.0, 0.3, 1.1}},  // 上
+					},
+					Edges: [][2]int{
+						{0, 1},
+						{0, 2},
+						{0, 3},
+						{1, 2},
+						{1, 3},
+						{2, 3},
+					},
+					Triangles: [][3]int{
+						{0, 1, 2},
+						{0, 1, 3},
+						{0, 2, 3},
+						{1, 2, 3},
+					},
+				},
+			},
+		},
+		Viewport: Viewport{
+			Width:      100,
+			Height:     100,
+			ScaleRatio: 0.5,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4,
+		},
+	}
+
+	// 透視変換を実行
+	actual := world.Transform()
+
+	// 結果の検証
+	assert.Len(t, actual.DiscreteObjects, 1)
+	assert.Len(t, actual.DiscreteObjects[0].Vertices, 4)
+}

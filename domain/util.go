@@ -123,6 +123,17 @@ func T(m mat.Dense) mat.Dense {
 	return *mat.DenseCopyOf((&m).T())
 }
 
+// DenseToVertices は行列を頂点のスライスに変換します
+// 4行N列の行列を受け取り、N個の頂点を返します
+func DenseToVertices(m mat.Dense) []Vertex {
+	_, colCnt := m.Dims()
+	vertices := make([]Vertex, 0, colCnt)
+	for colIdx := 0; colIdx < colCnt; colIdx++ {
+		vertices = append(vertices, Vertex{Vector3D: Vector3D{m.At(0, colIdx), m.At(1, colIdx), m.At(2, colIdx)}})
+	}
+	return vertices
+}
+
 // CalcNormalFromPoints は3つの点から法線ベクトルを計算します
 // 引数に渡す座標の順番で法線の表裏が変わるため注意する
 // 法線方向は右ねじの法則で判別できます。

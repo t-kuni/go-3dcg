@@ -9,24 +9,24 @@ import (
 )
 
 const (
-	winWidth, winHeight int32 = 800, 600
+	width, height int32 = 800, 600
 )
 
 func main() {
 	world := domain.World{
 		Camera: domain.Camera{
-			Location:  domain.Vector3D{0, 0, -1.0},
-			Direction: domain.Vector3D{math.Pi / 16, 0, 0},
+			Location:  domain.Vector3D{0, 0, 0},
+			Direction: domain.Vector3D{0, 0, 0},
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
-				X: 0, Y: 0, Z: 1,
+				X: 0, Y: 0, Z: 0,
 				Object: domain.Object{
 					Vertices: []domain.Vertex{
-						{Vector3D: domain.Vector3D{-1.0, 0.0, -0.5}},
-						{Vector3D: domain.Vector3D{1.0, 0.0, -0.5}},
-						{Vector3D: domain.Vector3D{0.0, 0.0, 0.5}},
-						{Vector3D: domain.Vector3D{0.0, 1.0, 0.0}},
+						{Vector3D: domain.Vector3D{-0.3, 0.0, 1.1}}, // 左下
+						{Vector3D: domain.Vector3D{0.3, 0.0, 1.1}},  // 右下
+						{Vector3D: domain.Vector3D{0.0, 0.0, 1.9}},  // 奥
+						{Vector3D: domain.Vector3D{0.0, 0.3, 1.1}},  // 上
 					},
 					Edges: [][2]int{
 						{0, 1},
@@ -46,9 +46,14 @@ func main() {
 			},
 		},
 		Viewport: domain.Viewport{
-			Width:      winWidth,
-			Height:     winHeight,
-			ScaleRatio: 0.25,
+			Width:      width,
+			Height:     height,
+			ScaleRatio: 0.5,
+		},
+		Clipping: domain.Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4,
 		},
 	}
 
@@ -56,7 +61,7 @@ func main() {
 	discreteWorld := world.Transform()
 
 	// 画像コンテキストを作成
-	dc := gg.NewContext(int(winWidth), int(winHeight))
+	dc := gg.NewContext(int(width), int(height))
 
 	// 画像をレンダリング
 	render(dc, discreteWorld)

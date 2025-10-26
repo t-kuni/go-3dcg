@@ -11,3 +11,4 @@ open render.png
 
 * Dense
     * 行列のこと
+* Denseのdataの配列は列毎に格納されている
