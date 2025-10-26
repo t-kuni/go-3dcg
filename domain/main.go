@@ -33,7 +33,7 @@ func (w World) Transform() DiscreteWorld {
 	for _, locatedObject := range w.LocatedObjects {
 		m := locatedObject.Object.Matrix()
 
-		m = T(m) // 転置(行列計算の次元を揃えるため)
+		m = T(m) // 転置(4行N列になる。行列計算の次元を揃えるため)
 
 		// ワールド座標変換
 		m = TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
@@ -61,6 +61,41 @@ func (w World) Transform() DiscreteWorld {
 
 	return discreateWorld
 }
+
+// // TransformPerspectiveProjection 透視変換を行う
+// func (w World) TransformPerspectiveProjection(m mat.Dense) mat.Dense {
+// 	viewVolume := w.ViewVolume()
+
+// 	viewVolume.ClipObject(m)
+
+// 	aspect := float64(w.Viewport.Width) / float64(w.Viewport.Height)
+// 	tan := math.Tan(w.Clipping.FieldOfView / 2.0)
+
+// 	zn := w.Clipping.NearDistance
+// 	zf := w.Clipping.FarDistance
+
+// 	// 左手座標系なので[3][2]要素は符号が反転している
+// 	projectionMatrix := mat.NewDense(4, 4, []float64{
+// 		1 / (aspect * tan), 0, 0, 0, // X軸
+// 		0, 1 / tan, 0, 0, // Y軸
+// 		0, 0, (zf + zn) / (zn - zf), (2 * zf * zf) / (zn - zf), // Z軸
+// 		0, 0, 1, 1, // 同次座標
+// 	})
+
+// 	var projected mat.Dense
+// 	projected.Mul(projectionMatrix, &m)
+
+// 	// mは転置されて4行N列になっている
+// 	_, colCnt := m.Dims()
+// 	for colIdx := 0; colIdx < colCnt; colIdx++ {
+// 		w := m.At(3, colIdx)
+// 		projected.Set(0, colIdx, m.At(0, colIdx)/w)
+// 		projected.Set(1, colIdx, m.At(1, colIdx)/w)
+// 		projected.Set(2, colIdx, m.At(2, colIdx)/w)
+// 	}
+
+// 	return projected
+// }
 
 type ViewVolume struct {
 	// クリッピング面の幅と高さ
