@@ -3,7 +3,6 @@ package domain
 import (
 	"math"
 
-	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -286,9 +285,9 @@ func (v ViewVolume) ClipObject(o Object) Object {
 
 	for _, triangle := range o.Triangles {
 		triangleVertices := [3]Vector3D{
-			o.Vertices.GetVertex(triangle[0]).Vector3D,
-			o.Vertices.GetVertex(triangle[1]).Vector3D,
-			o.Vertices.GetVertex(triangle[2]).Vector3D,
+			o.Vertices.GetVertex(triangle[0]),
+			o.Vertices.GetVertex(triangle[1]),
+			o.Vertices.GetVertex(triangle[2]),
 		}
 		vertices := v.SutherlandHodgman(triangleVertices)
 		triangles := Triangulate(vertices)
@@ -330,7 +329,7 @@ func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
 				gridKey := [3]int{baseGridKey[0] + dx, baseGridKey[1] + dy, baseGridKey[2] + dz}
 				if candidateVertexIndexes, ok := vg.grid[gridKey]; ok {
 					for _, candidateVertexIndex := range candidateVertexIndexes {
-						candidateVertex := vg.vertices[candidateVertexIndex].Vector3D
+						candidateVertex := vg.vertices[candidateVertexIndex]
 						if v.Distance(candidateVertex) < vg.epsilon {
 							return true, candidateVertexIndex
 						}
@@ -352,7 +351,7 @@ func (vg *VertexGrid) AddVertex(v Vector3D) int {
 		nextIndex := len(vg.vertices)
 		gridKey := vg.makeKey(v)
 		vg.grid[gridKey] = append(vg.grid[gridKey], nextIndex)
-		vg.vertices = append(vg.vertices, Vertex{Vector3D: v})
+		vg.vertices = append(vg.vertices, v)
 		return nextIndex
 	}
 }
@@ -362,7 +361,7 @@ func (v ViewVolume) MargeVertices(o Object) Object {
 
 	vertexMap := make(map[int]int, 50)
 	o.Vertices.EachVertex(func(i int, vertex Vertex) bool {
-		vertexMap[i] = grid.AddVertex(vertex.Vector3D)
+		vertexMap[i] = grid.AddVertex(vertex)
 		return true
 	})
 
@@ -437,15 +436,14 @@ func NewDynamicObject() DynamicObject {
 
 func (o *DynamicObject) AddTriangle(triangle [3]Vector3D) {
 	nextIndex := len(o.Vertices)
-	o.Vertices = append(o.Vertices, Vertex{Vector3D: triangle[0]}, Vertex{Vector3D: triangle[1]}, Vertex{Vector3D: triangle[2]})
+	o.Vertices = append(o.Vertices, triangle[0], triangle[1], triangle[2])
 	o.Edges = append(o.Edges, [2]int{nextIndex, nextIndex + 1}, [2]int{nextIndex + 1, nextIndex + 2}, [2]int{nextIndex + 2, nextIndex})
 	o.Triangles = append(o.Triangles, [3]int{nextIndex, nextIndex + 1, nextIndex + 2})
 }
 
 func (o *DynamicObject) ToObject() Object {
-	vertices := lo.Map(o.Vertices, func(v Vertex, _ int) Vector3D { return v.Vector3D })
 	return Object{
-		Vertices:  NewVertices(vertices),
+		Vertices:  NewVertices(o.Vertices),
 		Edges:     o.Edges,
 		Triangles: o.Triangles,
 	}
@@ -469,7 +467,7 @@ func NewVertices(vertices []Vector3D) Vertices {
 }
 
 func (v Vertices) GetVertex(i int) Vertex {
-	return Vertex{Vector3D: Vector3D{v.At(0, i), v.At(1, i), v.At(2, i)}}
+	return Vector3D{v.At(0, i), v.At(1, i), v.At(2, i)}
 }
 
 func (v Vertices) EachVertex(f func(int, Vertex) bool) {
@@ -486,9 +484,7 @@ func (v Vertices) Len() int {
 	return colCnt
 }
 
-type Vertex struct {
-	Vector3D
-}
+type Vertex = Vector3D
 
 type Vector3D [3]float64
 

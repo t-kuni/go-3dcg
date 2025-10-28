@@ -420,9 +420,9 @@ func TestDynamicObject_AddTriangle_正常系(t *testing.T) {
 	obj.AddTriangle(triangle)
 
 	assert.Len(t, obj.Vertices, 3)
-	assert.Equal(t, Vector3D{0.0, 0.0, 0.0}, obj.Vertices[0].Vector3D)
-	assert.Equal(t, Vector3D{1.0, 0.0, 0.0}, obj.Vertices[1].Vector3D)
-	assert.Equal(t, Vector3D{0.0, 1.0, 0.0}, obj.Vertices[2].Vector3D)
+	assert.Equal(t, Vector3D{0.0, 0.0, 0.0}, obj.Vertices[0])
+	assert.Equal(t, Vector3D{1.0, 0.0, 0.0}, obj.Vertices[1])
+	assert.Equal(t, Vector3D{0.0, 1.0, 0.0}, obj.Vertices[2])
 
 	assert.Len(t, obj.Edges, 3)
 	assert.Equal(t, [2]int{0, 1}, obj.Edges[0])
@@ -451,8 +451,8 @@ func TestVertexGrid_AddVertex_正常系(t *testing.T) {
 	assert.Equal(t, 0, idx)
 
 	assert.Len(t, vg.vertices, 2)
-	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, vg.vertices[0].Vector3D)
-	assert.Equal(t, Vector3D{1.2, 2.2, 3.2}, vg.vertices[1].Vector3D)
+	assert.Equal(t, Vector3D{1.0, 2.0, 3.0}, vg.vertices[0])
+	assert.Equal(t, Vector3D{1.2, 2.2, 3.2}, vg.vertices[1])
 }
 
 func TestVertexGrid_SearchVertex(t *testing.T) {
@@ -502,9 +502,9 @@ func TestViewVolume_MargeVertices_頂点がマージされること１(t *testin
 	result := viewVolume.MargeVertices(obj)
 
 	assert.Equal(t, 3, result.Vertices.Len())
-	assert.Equal(t, Vector3D{-0.5, 0.0, 1.0}, result.Vertices.GetVertex(0).Vector3D)
-	assert.Equal(t, Vector3D{0.5, 0.0, 1.0}, result.Vertices.GetVertex(1).Vector3D)
-	assert.Equal(t, Vector3D{0.0, 1.0, 1.0}, result.Vertices.GetVertex(2).Vector3D)
+	assert.Equal(t, Vector3D{-0.5, 0.0, 1.0}, result.Vertices.GetVertex(0))
+	assert.Equal(t, Vector3D{0.5, 0.0, 1.0}, result.Vertices.GetVertex(1))
+	assert.Equal(t, Vector3D{0.0, 1.0, 1.0}, result.Vertices.GetVertex(2))
 
 	assert.Len(t, result.Edges, 3)
 	assert.Equal(t, [2]int{0, 1}, result.Edges[0])
@@ -546,10 +546,10 @@ func TestViewVolume_MargeVertices_頂点がマージされること２(t *testin
 	result := viewVolume.MargeVertices(obj)
 
 	assert.Equal(t, 4, result.Vertices.Len())
-	assert.Equal(t, Vector3D{-0.5, 0.0, 1.0}, result.Vertices.GetVertex(0).Vector3D)
-	assert.Equal(t, Vector3D{0.5, 0.0, 1.0}, result.Vertices.GetVertex(1).Vector3D)
-	assert.Equal(t, Vector3D{0.0, 1.0, 1.0}, result.Vertices.GetVertex(2).Vector3D)
-	assert.Equal(t, Vector3D{0.0, -1.0, 1.0}, result.Vertices.GetVertex(3).Vector3D)
+	assert.Equal(t, Vector3D{-0.5, 0.0, 1.0}, result.Vertices.GetVertex(0))
+	assert.Equal(t, Vector3D{0.5, 0.0, 1.0}, result.Vertices.GetVertex(1))
+	assert.Equal(t, Vector3D{0.0, 1.0, 1.0}, result.Vertices.GetVertex(2))
+	assert.Equal(t, Vector3D{0.0, -1.0, 1.0}, result.Vertices.GetVertex(3))
 
 	assert.Len(t, result.Edges, 5)
 	assert.Equal(t, [2]int{0, 1}, result.Edges[0])
@@ -608,33 +608,33 @@ func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T
 
 	// クリッピングされずに三角形が保持されることを確認
 	assert.Equal(t, 7, result.Vertices.Len())
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(0).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.82, result.Vertices.GetVertex(0).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 2.0, result.Vertices.GetVertex(0).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(0).X(), 1e-2)
+	assert.InDelta(t, 0.82, result.Vertices.GetVertex(0).Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices.GetVertex(0).Z(), 1e-2)
 
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(1).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(1).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 2.0, result.Vertices.GetVertex(1).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(1).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(1).Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices.GetVertex(1).Z(), 1e-2)
 
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(2).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(2).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 1.5, result.Vertices.GetVertex(2).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(2).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(2).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices.GetVertex(2).Z(), 1e-2)
 
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(3).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.62, result.Vertices.GetVertex(3).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 1.5, result.Vertices.GetVertex(3).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(3).X(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices.GetVertex(3).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices.GetVertex(3).Z(), 1e-2)
 
-	assert.InDelta(t, 0.62, result.Vertices.GetVertex(4).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(4).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 1.5, result.Vertices.GetVertex(4).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices.GetVertex(4).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(4).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices.GetVertex(4).Z(), 1e-2)
 
-	assert.InDelta(t, 0.62, result.Vertices.GetVertex(5).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.62, result.Vertices.GetVertex(5).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 1.5, result.Vertices.GetVertex(5).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices.GetVertex(5).X(), 1e-2)
+	assert.InDelta(t, 0.62, result.Vertices.GetVertex(5).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.Vertices.GetVertex(5).Z(), 1e-2)
 
-	assert.InDelta(t, 0.82, result.Vertices.GetVertex(6).Vector3D.X(), 1e-2)
-	assert.InDelta(t, 0.0, result.Vertices.GetVertex(6).Vector3D.Y(), 1e-2)
-	assert.InDelta(t, 2.0, result.Vertices.GetVertex(6).Vector3D.Z(), 1e-2)
+	assert.InDelta(t, 0.82, result.Vertices.GetVertex(6).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.Vertices.GetVertex(6).Y(), 1e-2)
+	assert.InDelta(t, 2.0, result.Vertices.GetVertex(6).Z(), 1e-2)
 
 	assert.Len(t, result.Edges, 12)
 	assert.Equal(t, [2]int{0, 1}, result.Edges[0])

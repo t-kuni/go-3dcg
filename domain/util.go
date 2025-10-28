@@ -129,7 +129,7 @@ func DenseToVertices(m mat.Dense) []Vertex {
 	_, colCnt := m.Dims()
 	vertices := make([]Vertex, 0, colCnt)
 	for colIdx := 0; colIdx < colCnt; colIdx++ {
-		vertices = append(vertices, Vertex{Vector3D: Vector3D{m.At(0, colIdx), m.At(1, colIdx), m.At(2, colIdx)}})
+		vertices = append(vertices, Vector3D{m.At(0, colIdx), m.At(1, colIdx), m.At(2, colIdx)})
 	}
 	return vertices
 }
