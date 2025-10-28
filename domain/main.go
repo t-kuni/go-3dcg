@@ -33,7 +33,7 @@ type Clipping struct {
 func (w World) Transform() DiscreteWorld {
 	discreateWorld := NewDiscreteWorld()
 	for _, obj := range w.LocatedObjects {
-		m := *obj.Object.Vertices.Dense
+		m := *obj.Object.VertexMatrix.Dense
 
 		// ワールド座標変換
 		m = TransformTranslate(m, obj.X, obj.Y, obj.Z)
@@ -43,9 +43,9 @@ func (w World) Transform() DiscreteWorld {
 		m = TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
 		// 透視投影
-		obj.Object.Vertices.Dense = &m
+		obj.Object.VertexMatrix.Dense = &m
 		o := w.TransformPerspectiveProjection(obj.Object)
-		m = *o.Vertices.Dense
+		m = *o.VertexMatrix.Dense
 
 		// ビューポート変換
 		m = TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
@@ -89,7 +89,7 @@ func (w World) TransformPerspectiveProjection(o Object) Object {
 	})
 
 	var projected mat.Dense
-	projected.Mul(projectionMatrix, &clippedObject.Vertices)
+	projected.Mul(projectionMatrix, &clippedObject.VertexMatrix)
 
 	// mは転置されて4行N列になっている
 	_, colCnt := projected.Dims()
@@ -101,7 +101,7 @@ func (w World) TransformPerspectiveProjection(o Object) Object {
 		projected.Set(3, colIdx, 1)
 	}
 
-	clippedObject.Vertices = Vertices{Dense: &projected}
+	clippedObject.VertexMatrix = VartexMatrix{Dense: &projected}
 
 	return clippedObject
 }
@@ -285,9 +285,9 @@ func (v ViewVolume) ClipObject(o Object) Object {
 
 	for _, triangle := range o.Triangles {
 		triangleVertices := [3]Vector3D{
-			o.Vertices.GetVertex(triangle[0]),
-			o.Vertices.GetVertex(triangle[1]),
-			o.Vertices.GetVertex(triangle[2]),
+			o.VertexMatrix.GetVertex(triangle[0]),
+			o.VertexMatrix.GetVertex(triangle[1]),
+			o.VertexMatrix.GetVertex(triangle[2]),
 		}
 		vertices := v.SutherlandHodgman(triangleVertices)
 		triangles := Triangulate(vertices)
@@ -360,7 +360,7 @@ func (v ViewVolume) MargeVertices(o Object) Object {
 	grid := NewVertexGrid(1e-2)
 
 	vertexMap := make(map[int]int, 50)
-	o.Vertices.EachVertex(func(i int, vertex Vertex) bool {
+	o.VertexMatrix.EachVertex(func(i int, vertex Vertex) bool {
 		vertexMap[i] = grid.AddVertex(vertex)
 		return true
 	})
@@ -401,9 +401,9 @@ type LocatedObject struct {
 }
 
 type Object struct {
-	// Vertices 頂点の行列
+	// VertexMatrix 頂点の行列
 	// 4行N列（頂点数分、横に伸びていきます。同次座標を含みます）
-	Vertices Vertices
+	VertexMatrix VartexMatrix
 	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
 	Edges [][2]int
 	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
@@ -411,11 +411,11 @@ type Object struct {
 	Triangles [][3]int
 }
 
-func NewObject(vertices []Vector3D, edges [][2]int, triangles [][3]int) Object {
+func NewObject(vertices []Vertex, edges [][2]int, triangles [][3]int) Object {
 	return Object{
-		Vertices:  NewVertices(vertices),
-		Edges:     edges,
-		Triangles: triangles,
+		VertexMatrix: NewVertexMatrix(vertices),
+		Edges:        edges,
+		Triangles:    triangles,
 	}
 }
 
@@ -443,19 +443,19 @@ func (o *DynamicObject) AddTriangle(triangle [3]Vector3D) {
 
 func (o *DynamicObject) ToObject() Object {
 	return Object{
-		Vertices:  NewVertices(o.Vertices),
-		Edges:     o.Edges,
-		Triangles: o.Triangles,
+		VertexMatrix: NewVertexMatrix(o.Vertices),
+		Edges:        o.Edges,
+		Triangles:    o.Triangles,
 	}
 }
 
-type Vertices struct {
+type VartexMatrix struct {
 	*mat.Dense
 }
 
-// NewVertices は頂点のスライスを行列に変換します
+// NewVertexMatrix は頂点のスライスを行列に変換します
 // 4行N列の行列を返します（頂点数分、横に伸びていきます。同次座標を含みます）
-func NewVertices(vertices []Vector3D) Vertices {
+func NewVertexMatrix(vertices []Vector3D) VartexMatrix {
 	m := mat.NewDense(4, len(vertices), nil)
 	for i, v := range vertices {
 		m.Set(0, i, v[0])
@@ -463,14 +463,14 @@ func NewVertices(vertices []Vector3D) Vertices {
 		m.Set(2, i, v[2])
 		m.Set(3, i, 1)
 	}
-	return Vertices{Dense: m}
+	return VartexMatrix{Dense: m}
 }
 
-func (v Vertices) GetVertex(i int) Vertex {
+func (v VartexMatrix) GetVertex(i int) Vertex {
 	return Vector3D{v.At(0, i), v.At(1, i), v.At(2, i)}
 }
 
-func (v Vertices) EachVertex(f func(int, Vertex) bool) {
+func (v VartexMatrix) EachVertex(f func(int, Vertex) bool) {
 	_, colCnt := v.Dims()
 	for i := 0; i < colCnt; i++ {
 		if !f(i, v.GetVertex(i)) {
@@ -479,7 +479,7 @@ func (v Vertices) EachVertex(f func(int, Vertex) bool) {
 	}
 }
 
-func (v Vertices) Len() int {
+func (v VartexMatrix) Len() int {
 	_, colCnt := v.Dims()
 	return colCnt
 }

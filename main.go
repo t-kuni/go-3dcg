@@ -85,7 +85,7 @@ func main() {
 			{
 				X: 0, Y: 0, Z: 0,
 				Object: domain.Object{
-					Vertices: domain.NewVertices([]domain.Vector3D{
+					VertexMatrix: domain.NewVertexMatrix([]domain.Vector3D{
 						{-0.3, 0.0, 1.1}, // 左下
 						{0.3, 0.0, 1.1},  // 右下
 						{0.0, 0.0, 1.9},  // 奥
