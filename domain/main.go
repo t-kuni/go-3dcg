@@ -3,6 +3,7 @@ package domain
 import (
 	"math"
 
+	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -32,20 +33,20 @@ type Clipping struct {
 
 func (w World) Transform() DiscreteWorld {
 	discreateWorld := NewDiscreteWorld()
-	for _, locatedObject := range w.LocatedObjects {
-		m := locatedObject.Object.Matrix()
-
-		m = T(m) // 転置(4行N列になる。行列計算の次元を揃えるため)
+	for _, obj := range w.LocatedObjects {
+		m := *obj.Object.Vertices.Dense
 
 		// ワールド座標変換
-		m = TransformTranslate(m, locatedObject.X, locatedObject.Y, locatedObject.Z)
+		m = TransformTranslate(m, obj.X, obj.Y, obj.Z)
 
 		// カメラ座標変換
 		m = TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
 		m = TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
 		// 透視投影
-		o, m := w.TransformPerspectiveProjection(locatedObject, m)
+		obj.Object.Vertices.Dense = &m
+		o := w.TransformPerspectiveProjection(obj.Object)
+		m = *o.Vertices.Dense
 
 		// ビューポート変換
 		m = TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
@@ -69,18 +70,9 @@ func (w World) Transform() DiscreteWorld {
 // TransformPerspectiveProjection 透視変換を行う
 // 引数oのVerticesは無視される
 // 引数mをVerticesとして扱う。mは転置されて4行N列になっている。
-func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Object, mat.Dense) {
-	newObject := Object{
-		Vertices:  DenseToVertices(m),
-		Edges:     o.Object.Edges,
-		Triangles: o.Object.Triangles,
-	}
-
+func (w World) TransformPerspectiveProjection(o Object) Object {
 	viewVolume := w.ViewVolume()
-	clippedObject := viewVolume.ClipObject(newObject)
-
-	// クリッピング後のオブジェクトから行列を取得し、転置する
-	m = T(clippedObject.Matrix())
+	clippedObject := viewVolume.ClipObject(o)
 
 	aspect := float64(w.Viewport.Width) / float64(w.Viewport.Height)
 	tan := math.Tan(w.Clipping.FieldOfView / 2.0)
@@ -98,7 +90,7 @@ func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Obj
 	})
 
 	var projected mat.Dense
-	projected.Mul(projectionMatrix, &m)
+	projected.Mul(projectionMatrix, &clippedObject.Vertices)
 
 	// mは転置されて4行N列になっている
 	_, colCnt := projected.Dims()
@@ -110,7 +102,9 @@ func (w World) TransformPerspectiveProjection(o LocatedObject, m mat.Dense) (Obj
 		projected.Set(3, colIdx, 1)
 	}
 
-	return clippedObject, projected
+	clippedObject.Vertices = Vertices{Dense: &projected}
+
+	return clippedObject
 }
 
 type ViewVolume struct {
@@ -288,17 +282,22 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 }
 
 func (v ViewVolume) ClipObject(o Object) Object {
-	newObject := NewObject()
+	newObject := NewDynamicObject()
 
 	for _, triangle := range o.Triangles {
-		vertices := v.SutherlandHodgman([3]Vector3D{o.Vertices[triangle[0]].Vector3D, o.Vertices[triangle[1]].Vector3D, o.Vertices[triangle[2]].Vector3D})
+		triangleVertices := [3]Vector3D{
+			o.Vertices.GetVertex(triangle[0]).Vector3D,
+			o.Vertices.GetVertex(triangle[1]).Vector3D,
+			o.Vertices.GetVertex(triangle[2]).Vector3D,
+		}
+		vertices := v.SutherlandHodgman(triangleVertices)
 		triangles := Triangulate(vertices)
 		for _, triangle := range triangles {
 			newObject.AddTriangle(triangle)
 		}
 	}
 
-	return v.MargeVertices(newObject)
+	return v.MargeVertices(newObject.ToObject())
 }
 
 type VertexGrid struct {
@@ -362,9 +361,10 @@ func (v ViewVolume) MargeVertices(o Object) Object {
 	grid := NewVertexGrid(1e-2)
 
 	vertexMap := make(map[int]int, 50)
-	for i, vertex := range o.Vertices {
+	o.Vertices.EachVertex(func(i int, vertex Vertex) bool {
 		vertexMap[i] = grid.AddVertex(vertex.Vector3D)
-	}
+		return true
+	})
 
 	newEdges := make([][2]int, 0, len(o.Edges))
 	for _, edge := range o.Edges {
@@ -376,11 +376,12 @@ func (v ViewVolume) MargeVertices(o Object) Object {
 		newTriangles = append(newTriangles, [3]int{vertexMap[triangle[0]], vertexMap[triangle[1]], vertexMap[triangle[2]]})
 	}
 
-	return Object{
+	dObj := DynamicObject{
 		Vertices:  grid.Vertices(),
 		Edges:     CleanEdges(newEdges),
 		Triangles: CleanTriangles(newTriangles),
 	}
+	return dObj.ToObject()
 }
 
 func (v ViewVolume) IntersectPlaneIntersectionPoint(fromVertex, toVertex Vector3D, clippingPlaneType ClippingPlaneType) Vector3D {
@@ -401,7 +402,9 @@ type LocatedObject struct {
 }
 
 type Object struct {
-	Vertices []Vertex
+	// Vertices 頂点の行列
+	// 4行N列（頂点数分、横に伸びていきます。同次座標を含みます）
+	Vertices Vertices
 	// Edges 辺を表す。[0]は始点の頂点の添字番号、[1]は終点の頂点の添字番号。
 	Edges [][2]int
 	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
@@ -409,27 +412,78 @@ type Object struct {
 	Triangles [][3]int
 }
 
-func NewObject() Object {
+func NewObject(vertices []Vector3D, edges [][2]int, triangles [][3]int) Object {
 	return Object{
+		Vertices:  NewVertices(vertices),
+		Edges:     edges,
+		Triangles: triangles,
+	}
+}
+
+// DynamicObject は動的に頂点を追加できるオブジェクトを表します。
+type DynamicObject struct {
+	Vertices  []Vertex
+	Edges     [][2]int
+	Triangles [][3]int
+}
+
+func NewDynamicObject() DynamicObject {
+	return DynamicObject{
 		Vertices:  make([]Vertex, 0, 50),
 		Edges:     make([][2]int, 0, 50),
 		Triangles: make([][3]int, 0, 50),
 	}
 }
 
-func (o Object) Matrix() mat.Dense {
-	vertices := []float64{}
-	for _, vertex := range o.Vertices {
-		vertices = append(vertices, vertex.X(), vertex.Y(), vertex.Z(), 1)
-	}
-	return *mat.NewDense(len(o.Vertices), 4, vertices)
-}
-
-func (o *Object) AddTriangle(triangle [3]Vector3D) {
+func (o *DynamicObject) AddTriangle(triangle [3]Vector3D) {
 	nextIndex := len(o.Vertices)
 	o.Vertices = append(o.Vertices, Vertex{Vector3D: triangle[0]}, Vertex{Vector3D: triangle[1]}, Vertex{Vector3D: triangle[2]})
 	o.Edges = append(o.Edges, [2]int{nextIndex, nextIndex + 1}, [2]int{nextIndex + 1, nextIndex + 2}, [2]int{nextIndex + 2, nextIndex})
 	o.Triangles = append(o.Triangles, [3]int{nextIndex, nextIndex + 1, nextIndex + 2})
+}
+
+func (o *DynamicObject) ToObject() Object {
+	vertices := lo.Map(o.Vertices, func(v Vertex, _ int) Vector3D { return v.Vector3D })
+	return Object{
+		Vertices:  NewVertices(vertices),
+		Edges:     o.Edges,
+		Triangles: o.Triangles,
+	}
+}
+
+type Vertices struct {
+	*mat.Dense
+}
+
+// NewVertices は頂点のスライスを行列に変換します
+// 4行N列の行列を返します（頂点数分、横に伸びていきます。同次座標を含みます）
+func NewVertices(vertices []Vector3D) Vertices {
+	m := mat.NewDense(4, len(vertices), nil)
+	for i, v := range vertices {
+		m.Set(0, i, v[0])
+		m.Set(1, i, v[1])
+		m.Set(2, i, v[2])
+		m.Set(3, i, 1)
+	}
+	return Vertices{Dense: m}
+}
+
+func (v Vertices) GetVertex(i int) Vertex {
+	return Vertex{Vector3D: Vector3D{v.At(0, i), v.At(1, i), v.At(2, i)}}
+}
+
+func (v Vertices) EachVertex(f func(int, Vertex) bool) {
+	_, colCnt := v.Dims()
+	for i := 0; i < colCnt; i++ {
+		if !f(i, v.GetVertex(i)) {
+			break
+		}
+	}
+}
+
+func (v Vertices) Len() int {
+	_, colCnt := v.Dims()
+	return colCnt
 }
 
 type Vertex struct {

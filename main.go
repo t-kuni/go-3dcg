@@ -85,12 +85,12 @@ func main() {
 			{
 				X: 0, Y: 0, Z: 0,
 				Object: domain.Object{
-					Vertices: []domain.Vertex{
-						{Vector3D: domain.Vector3D{-0.3, 0.0, 1.1}}, // 左下
-						{Vector3D: domain.Vector3D{0.3, 0.0, 1.1}},  // 右下
-						{Vector3D: domain.Vector3D{0.0, 0.0, 1.9}},  // 奥
-						{Vector3D: domain.Vector3D{0.0, 0.3, 1.1}},  // 上
-					},
+					Vertices: domain.NewVertices([]domain.Vector3D{
+						{-0.3, 0.0, 1.1}, // 左下
+						{0.3, 0.0, 1.1},  // 右下
+						{0.0, 0.0, 1.9},  // 奥
+						{0.0, 0.3, 1.1},  // 上
+					}),
 					Edges: [][2]int{
 						{0, 1},
 						{0, 2},
