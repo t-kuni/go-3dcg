@@ -32,35 +32,23 @@ type Clipping struct {
 
 func (w World) Transform() DiscreteWorld {
 	discreateWorld := NewDiscreteWorld()
-	for _, obj := range w.LocatedObjects {
-		m := *obj.Object.VertexMatrix.Dense
+	for _, locatedObj := range w.LocatedObjects {
+		obj := locatedObj.Object
 
 		// ワールド座標変換
-		m = TransformTranslate(m, obj.X, obj.Y, obj.Z)
+		obj.VertexMatrix.TransformTranslate(locatedObj.X, locatedObj.Y, locatedObj.Z)
 
 		// カメラ座標変換
-		m = TransformTranslate(m, -w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
-		m = TransformRotate(m, -w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
+		obj.VertexMatrix.TransformTranslate(-w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
+		obj.VertexMatrix.TransformRotate(-w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
 		// 透視投影
-		obj.Object.VertexMatrix.Dense = &m
-		o := w.TransformPerspectiveProjection(obj.Object)
-		m = *o.VertexMatrix.Dense
+		obj = w.TransformPerspectiveProjection(obj)
 
 		// ビューポート変換
-		m = TransformViewport(m, w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
+		obj.VertexMatrix.TransformViewport(w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
 
-		m = T(m) // 転置を戻す
-
-		rowCnt, _ := m.Dims()
-		obj := NewDiscreteObject()
-		obj.Edges = o.Edges
-		for r := 0; r < rowCnt; r++ {
-			rx := m.At(r, 0)
-			ry := m.At(r, 1)
-			obj.AddVertex(DiscretePoint2D{X: int32(math.Round(rx)), Y: int32(math.Round(ry))})
-		}
-		discreateWorld.AddObject(obj)
+		discreateWorld.AddObject(NewDiscreteObject(obj))
 	}
 
 	return discreateWorld
@@ -466,6 +454,99 @@ func NewVertexMatrix(vertices []Vector3D) VartexMatrix {
 	return VartexMatrix{Dense: m}
 }
 
+// TransformTranslate
+// 第一引数mは４行である必要がある
+func (v *VartexMatrix) TransformTranslate(x, y, z float64) {
+	m := mat.NewDense(4, 4, []float64{
+		1, 0, 0, x,
+		0, 1, 0, y,
+		0, 0, 1, z,
+		0, 0, 0, 1,
+	})
+
+	var result mat.Dense
+	result.Mul(m, v.Dense)
+	v.Dense = &result
+}
+
+// TransformRotate は3つの軸（X、Y、Z）での回転を適用します
+// x, y, z はそれぞれの軸での回転角度（ラジアン）です
+// 第一引数mは４行である必要がある
+func (v *VartexMatrix) TransformRotate(x, y, z float64) {
+	// X軸回転行列
+	mx := mat.NewDense(4, 4, []float64{
+		1, 0, 0, 0,
+		0, math.Cos(x), -math.Sin(x), 0,
+		0, math.Sin(x), math.Cos(x), 0,
+		0, 0, 0, 1,
+	})
+
+	// Y軸回転行列
+	my := mat.NewDense(4, 4, []float64{
+		math.Cos(y), 0, math.Sin(y), 0,
+		0, 1, 0, 0,
+		-math.Sin(y), 0, math.Cos(y), 0,
+		0, 0, 0, 1,
+	})
+
+	// Z軸回転行列
+	mz := mat.NewDense(4, 4, []float64{
+		math.Cos(z), -math.Sin(z), 0, 0,
+		math.Sin(z), math.Cos(z), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	})
+
+	// 回転を順番に適用: Z軸 -> Y軸 -> X軸の順で回転
+	var result1, result2, result3 mat.Dense
+	result1.Mul(mz, v.Dense)
+	result2.Mul(my, &result1)
+	result3.Mul(mx, &result2)
+
+	v.Dense = &result3
+}
+
+// transformScale は3次元オブジェクトの拡大・縮小変換を行います
+// scaleX, scaleY, scaleZ はそれぞれのX、Y、Z軸方向の拡大率です
+// 第一引数mは４行である必要がある
+func (v *VartexMatrix) TransformScale(scaleX, scaleY, scaleZ float64) {
+	m := mat.NewDense(4, 4, []float64{
+		scaleX, 0, 0, 0,
+		0, scaleY, 0, 0,
+		0, 0, scaleZ, 0,
+		0, 0, 0, 1,
+	})
+
+	var result mat.Dense
+	result.Mul(m, v.Dense)
+	v.Dense = &result
+}
+
+// transformScaleUniform は均等な拡大・縮小変換を行います
+// scale は全軸方向の拡大率です
+// 第一引数mは４行である必要がある
+func (v *VartexMatrix) TransformScaleUniform(scale float64) {
+	v.TransformScale(scale, scale, scale)
+}
+
+// TransformViewport はビューポート変換を行います
+// SDL2の仕様に準拠した整数型の座標系に変換します
+// SDL2の仕様：
+// - 原点 (0,0) はウィンドウの左上
+// - X軸は右方向が正
+// - Y軸は下方向が正
+//
+// 第一引数mは４行である必要がある
+// 実数値の単位座標(1.0f)を「画面の短辺」の{scaleRatio}%分、拡大する
+func (v *VartexMatrix) TransformViewport(width, height int32, scaleRatio float64) {
+	// 短辺を基準にスケールを決める
+	scale := math.Min(float64(width), float64(height)) * scaleRatio
+
+	v.TransformScale(scale, -scale, 1) // SDL2に準拠するため上下反転する
+
+	v.TransformTranslate(float64(width)/2, float64(height)/2, 0)
+}
+
 func (v VartexMatrix) GetVertex(i int) Vertex {
 	return Vector3D{v.At(0, i), v.At(1, i), v.At(2, i)}
 }
@@ -551,9 +632,18 @@ type DiscreteObject struct {
 	Triangles [][3]int
 }
 
-func NewDiscreteObject() DiscreteObject {
+func NewDiscreteObject(o Object) DiscreteObject {
+	_, colCnt := o.VertexMatrix.Dims()
+	vertices := make([]DiscretePoint2D, 0, colCnt)
+	for i := 0; i < colCnt; i++ {
+		rx := o.VertexMatrix.At(0, i)
+		ry := o.VertexMatrix.At(1, i)
+		vertices = append(vertices, DiscretePoint2D{X: int32(math.Round(rx)), Y: int32(math.Round(ry))})
+	}
 	return DiscreteObject{
-		Vertices: []DiscretePoint2D{},
+		Vertices:  vertices,
+		Edges:     o.Edges,
+		Triangles: o.Triangles,
 	}
 }
 
