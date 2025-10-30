@@ -2,8 +2,6 @@ module github.com/t-kuni/go-3dcg
 
 go 1.24.0
 
-toolchain go1.24.9
-
 require (
 	github.com/fogleman/gg v1.3.0
 	github.com/stretchr/testify v1.11.1

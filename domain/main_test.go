@@ -660,57 +660,53 @@ func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T
 	assert.Equal(t, [3]int{1, 4, 2}, result.Triangles[5])
 }
 
-// func TestWorld_TransformPerspectiveProjection_正常系(t *testing.T) {
-// 	world := World{
-// 		Viewport: Viewport{
-// 			Width:  100,
-// 			Height: 100,
-// 		},
-// 		Clipping: Clipping{
-// 			NearDistance: 1.0,
-// 			FarDistance:  2.0,
-// 			FieldOfView:  math.Pi / 4, // 45度
-// 		},
-// 	}
+func TestWorld_TransformPerspectiveProjection_正常系(t *testing.T) {
+	world := World{
+		Viewport: Viewport{
+			Width:  100,
+			Height: 100,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
 
-// 	// ビューボリューム内の三角形オブジェクトを作成
-// 	locatedObject := LocatedObject{
-// 		Object: Object{
-// 			Vertices: NewVertices([]Vector3D{
-// 				{-0.3, 0.0, 1.5}, // 左下
-// 				{0.3, 0.0, 1.5},  // 右下
-// 				{0.0, 0.0, 1.9},  // 奥
-// 				{0.0, 0.3, 1.5},  // 上
-// 			}),
-// 			Edges: [][2]int{
-// 				{0, 1},
-// 				{0, 2},
-// 				{0, 3},
-// 				{1, 2},
-// 				{1, 3},
-// 				{2, 3},
-// 			},
-// 			Triangles: [][3]int{
-// 				{0, 1, 2},
-// 				{0, 1, 3},
-// 				{0, 2, 3},
-// 				{1, 2, 3},
-// 			},
-// 		},
-// 	}
+	// ビューボリューム内の三角形オブジェクトを作成
+	locatedObject := LocatedObject{
+		Object: Object{
+			VertexMatrix: NewVertexMatrix([]Vector3D{
+				{-0.3, 0.0, 1.1}, // 左下
+				{0.3, 0.0, 1.1},  // 右下
+				{0.0, 0.0, 1.9},  // 奥
+				{0.0, 0.3, 1.1},  // 上
+			}),
+			Edges: [][2]int{
+				{0, 1},
+				{0, 2},
+				{0, 3},
+				{1, 2},
+				{1, 3},
+				{2, 3},
+			},
+			Triangles: [][3]int{
+				{0, 1, 2},
+				{0, 1, 3},
+				{0, 2, 3},
+				{1, 2, 3},
+			},
+		},
+	}
 
-// 	// 透視変換を実行
-// 	resultObject := world.TransformPerspectiveProjection(locatedObject.Object)
+	// 透視変換を実行
+	resultObject := world.TransformPerspectiveProjection(locatedObject.Object)
 
-// 	// 結果の検証
-// 	// assert.Len(t, resultObject.Vertices, 4)
-// 	assert.Len(t, resultObject.Edges, 6)
-// 	assert.Len(t, resultObject.Triangles, 4)
-
-// 	rowCnt, colCnt := resultObject.Vertices.Dims()
-// 	assert.Equal(t, 4, rowCnt)
-// 	assert.Equal(t, 4, colCnt)
-// }
+	// 結果の検証
+	assert.Equal(t, 4, resultObject.VertexMatrix.Len())
+	assert.Len(t, resultObject.Edges, 6)
+	assert.Len(t, resultObject.Triangles, 4)
+}
 
 // func TestWorld_Transform_正常系(t *testing.T) {
 // 	world := World{

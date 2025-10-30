@@ -46,7 +46,7 @@ func (w World) Transform() DiscreteWorld {
 		obj = w.TransformPerspectiveProjection(obj)
 
 		// ビューポート変換
-		obj.VertexMatrix.TransformViewport(w.Viewport.Width, w.Viewport.Height, w.Viewport.ScaleRatio)
+		obj.VertexMatrix.TransformViewport(w.Viewport.Width, w.Viewport.Height)
 
 		discreateWorld.AddObject(NewDiscreteObject(obj))
 	}
@@ -55,6 +55,8 @@ func (w World) Transform() DiscreteWorld {
 }
 
 // TransformPerspectiveProjection 透視変換を行う
+// NDC（Normalized Device Coordinates・正規化デバイス座標）に変換する
+// x,y∈[−1,1], z∈[0,1] に変換する
 // 引数oのVerticesは無視される
 // 引数mをVerticesとして扱う。mは転置されて4行N列になっている。
 func (w World) TransformPerspectiveProjection(o Object) Object {
@@ -535,16 +537,21 @@ func (v *VartexMatrix) TransformScaleUniform(scale float64) {
 // - 原点 (0,0) はウィンドウの左上
 // - X軸は右方向が正
 // - Y軸は下方向が正
-//
-// 第一引数mは４行である必要がある
-// 実数値の単位座標(1.0f)を「画面の短辺」の{scaleRatio}%分、拡大する
-func (v *VartexMatrix) TransformViewport(width, height int32, scaleRatio float64) {
+func (v *VartexMatrix) TransformViewport(width, height int32) {
 	// 短辺を基準にスケールを決める
-	scale := math.Min(float64(width), float64(height)) * scaleRatio
+	harfWdith := float64(width) / 2
+	harfHeight := float64(height) / 2
 
-	v.TransformScale(scale, -scale, 1) // SDL2に準拠するため上下反転する
+	m := mat.NewDense(4, 4, []float64{
+		harfWdith, 0, 0, harfWdith,
+		0, -harfHeight, 0, harfHeight,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	})
 
-	v.TransformTranslate(float64(width)/2, float64(height)/2, 0)
+	var result mat.Dense
+	result.Mul(m, v.Dense)
+	v.Dense = &result
 }
 
 func (v VartexMatrix) GetVertex(i int) Vertex {
@@ -636,9 +643,9 @@ func NewDiscreteObject(o Object) DiscreteObject {
 	_, colCnt := o.VertexMatrix.Dims()
 	vertices := make([]DiscretePoint2D, 0, colCnt)
 	for i := 0; i < colCnt; i++ {
-		rx := o.VertexMatrix.At(0, i)
-		ry := o.VertexMatrix.At(1, i)
-		vertices = append(vertices, DiscretePoint2D{X: int32(math.Round(rx)), Y: int32(math.Round(ry))})
+		x := o.VertexMatrix.At(0, i)
+		y := o.VertexMatrix.At(1, i)
+		vertices = append(vertices, DiscretePoint2D{X: int32(math.Round(x)), Y: int32(math.Round(y))})
 	}
 	return DiscreteObject{
 		Vertices:  vertices,
