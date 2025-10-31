@@ -563,7 +563,7 @@ func TestViewVolume_MargeVertices_頂点がマージされること２(t *testin
 	assert.Equal(t, [3]int{0, 1, 3}, result.Triangles[1])
 }
 
-func TestViewVolume_Clip_ビューボリュームを覆う三角形(t *testing.T) {
+func TestViewVolume_ClipObject_ビューボリュームを覆う三角形(t *testing.T) {
 	world := World{
 		Viewport: Viewport{
 			Width:  100,
@@ -704,8 +704,88 @@ func TestWorld_TransformPerspectiveProjection_正常系(t *testing.T) {
 
 	// 結果の検証
 	assert.Equal(t, 4, resultObject.VertexMatrix.Len())
+
+	assert.InDelta(t, -0.65, resultObject.VertexMatrix.GetVertex(0).X(), 1e-2)
+	assert.InDelta(t, 0.0, resultObject.VertexMatrix.GetVertex(0).Y(), 1e-2)
+	assert.InDelta(t, 0.18, resultObject.VertexMatrix.GetVertex(0).Z(), 1e-2)
+
+	assert.InDelta(t, 0.65, resultObject.VertexMatrix.GetVertex(1).X(), 1e-2)
+	assert.InDelta(t, 0.0, resultObject.VertexMatrix.GetVertex(1).Y(), 1e-2)
+	assert.InDelta(t, 0.18, resultObject.VertexMatrix.GetVertex(1).Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, resultObject.VertexMatrix.GetVertex(2).X(), 1e-2)
+	assert.InDelta(t, 0.0, resultObject.VertexMatrix.GetVertex(2).Y(), 1e-2)
+	assert.InDelta(t, 0.94, resultObject.VertexMatrix.GetVertex(2).Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, resultObject.VertexMatrix.GetVertex(3).X(), 1e-2)
+	assert.InDelta(t, 0.65, resultObject.VertexMatrix.GetVertex(3).Y(), 1e-2)
+	assert.InDelta(t, 0.18, resultObject.VertexMatrix.GetVertex(3).Z(), 1e-2)
+
 	assert.Len(t, resultObject.Edges, 6)
 	assert.Len(t, resultObject.Triangles, 4)
+}
+
+func TestWorld_ClipWithViewVolume_正常系(t *testing.T) {
+	world := World{
+		Viewport: Viewport{
+			Width:  100,
+			Height: 100,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
+
+	// 左に突き抜けるオブジェクト
+	obj := Object{
+		VertexMatrix: NewVertexMatrix([]Vector3D{
+			{0.0, 0.0, 1.5},   // 中央
+			{-10.0, 0.0, 1.5}, // 左
+			{0.0, 0.3, 1.5},   // 上
+		}),
+		Edges: [][2]int{
+			{0, 1},
+			{1, 2},
+			{2, 0},
+		},
+		Triangles: [][3]int{
+			{0, 1, 2},
+		},
+	}
+
+	// ClipWithViewVolumeを実行
+	result := world.ClipWithViewVolume(obj)
+
+	// ビューボリューム内なので変更されずに保持されることを確認
+	assert.Equal(t, 4, result.VertexMatrix.Len())
+	assert.InDelta(t, 0.0, result.VertexMatrix.GetVertex(0).X(), 1e-2)
+	assert.InDelta(t, 0.3, result.VertexMatrix.GetVertex(0).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.VertexMatrix.GetVertex(0).Z(), 1e-2)
+
+	assert.InDelta(t, 0.0, result.VertexMatrix.GetVertex(1).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.VertexMatrix.GetVertex(1).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.VertexMatrix.GetVertex(1).Z(), 1e-2)
+
+	assert.InDelta(t, -0.62, result.VertexMatrix.GetVertex(2).X(), 1e-2)
+	assert.InDelta(t, 0.0, result.VertexMatrix.GetVertex(2).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.VertexMatrix.GetVertex(2).Z(), 1e-2)
+
+	assert.InDelta(t, -0.62, result.VertexMatrix.GetVertex(3).X(), 1e-2)
+	assert.InDelta(t, 0.28, result.VertexMatrix.GetVertex(3).Y(), 1e-2)
+	assert.InDelta(t, 1.5, result.VertexMatrix.GetVertex(3).Z(), 1e-2)
+
+	assert.Len(t, result.Edges, 5)
+	assert.Equal(t, [2]int{0, 1}, result.Edges[0])
+	assert.Equal(t, [2]int{1, 2}, result.Edges[1])
+	assert.Equal(t, [2]int{2, 0}, result.Edges[2])
+	assert.Equal(t, [2]int{2, 3}, result.Edges[3])
+	assert.Equal(t, [2]int{3, 0}, result.Edges[4])
+
+	assert.Len(t, result.Triangles, 2)
+	assert.Equal(t, [3]int{0, 1, 2}, result.Triangles[0])
+	assert.Equal(t, [3]int{0, 2, 3}, result.Triangles[1])
 }
 
 // func TestWorld_Transform_正常系(t *testing.T) {

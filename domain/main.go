@@ -42,6 +42,9 @@ func (w World) Transform() DiscreteWorld {
 		obj.VertexMatrix.TransformTranslate(-w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
 		obj.VertexMatrix.TransformRotate(-w.Camera.Direction.X(), -w.Camera.Direction.Y(), -w.Camera.Direction.Z())
 
+		// ビューボリュームでクリッピング
+		obj = w.ClipWithViewVolume(obj)
+
 		// 透視投影
 		obj = w.TransformPerspectiveProjection(obj)
 
@@ -54,15 +57,15 @@ func (w World) Transform() DiscreteWorld {
 	return discreateWorld
 }
 
+func (w World) ClipWithViewVolume(o Object) Object {
+	viewVolume := w.ViewVolume()
+	return viewVolume.ClipObject(o)
+}
+
 // TransformPerspectiveProjection 透視変換を行う
 // NDC（Normalized Device Coordinates・正規化デバイス座標）に変換する
 // x,y∈[−1,1], z∈[0,1] に変換する
-// 引数oのVerticesは無視される
-// 引数mをVerticesとして扱う。mは転置されて4行N列になっている。
 func (w World) TransformPerspectiveProjection(o Object) Object {
-	viewVolume := w.ViewVolume()
-	clippedObject := viewVolume.ClipObject(o)
-
 	aspect := float64(w.Viewport.Width) / float64(w.Viewport.Height)
 	tan := math.Tan(w.Clipping.FieldOfView / 2.0)
 
@@ -79,7 +82,7 @@ func (w World) TransformPerspectiveProjection(o Object) Object {
 	})
 
 	var projected mat.Dense
-	projected.Mul(projectionMatrix, &clippedObject.VertexMatrix)
+	projected.Mul(projectionMatrix, &o.VertexMatrix)
 
 	// mは転置されて4行N列になっている
 	_, colCnt := projected.Dims()
@@ -91,9 +94,9 @@ func (w World) TransformPerspectiveProjection(o Object) Object {
 		projected.Set(3, colIdx, 1)
 	}
 
-	clippedObject.VertexMatrix = VartexMatrix{Dense: &projected}
+	o.VertexMatrix = VartexMatrix{Dense: &projected}
 
-	return clippedObject
+	return o
 }
 
 type ViewVolume struct {
