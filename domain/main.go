@@ -175,6 +175,35 @@ func (w World) ViewVolume() ViewVolume {
 	}
 }
 
+// func (w World) A() {
+// 	width := w.Viewport.Width
+// 	height := w.Viewport.Height
+// 	halfWidth := width / 2
+// 	minXpixel := -halfWidth
+// 	maxXpixel := halfWidth
+// 	halfHeight := height / 2
+// 	minYpixel := -halfHeight
+// 	maxYpixel := halfHeight
+
+// 	viewVolume := w.ViewVolume()
+// 	minXframe := viewVolume.NearTopLeft.X()
+// 	maxXframe := viewVolume.NearTopRight.X()
+// 	minYframe := viewVolume.NearTopLeft.Y()
+// 	maxYframe := viewVolume.NearBottomLeft.Y()
+// 	for xPixel := minXpixel; xPixel <= maxXpixel; xPixel++ {
+// 		for yPixel := minYpixel; yPixel <= maxYpixel; yPixel++ {
+// 			rayPoint := Vector3D{
+// 				((float64(xPixel)+0.5)/float64(width))*(maxXframe-minXframe) + minXframe,
+// 				((float64(yPixel)+0.5)/float64(height))*(maxYframe-minYframe) + minYframe,
+// 				w.Clipping.NearDistance,
+// 			}
+// 			rayDistance := rayPoint.Distance()
+// 			rayDirection := rayPoint.Normalize()
+// 			fmt.Println(rayDirection, rayDistance)
+// 		}
+// 	}
+// }
+
 func (v ViewVolume) PlaneNormal(clippingPlaneType ClippingPlaneType) Vector3D {
 	switch clippingPlaneType {
 	case Near:
@@ -323,7 +352,7 @@ func (vg VertexGrid) SearchVertex(v Vector3D) (bool, int) {
 				if candidateVertexIndexes, ok := vg.grid[gridKey]; ok {
 					for _, candidateVertexIndex := range candidateVertexIndexes {
 						candidateVertex := vg.vertices[candidateVertexIndex]
-						if v.Distance(candidateVertex) < vg.epsilon {
+						if v.DistanceTo(candidateVertex) < vg.epsilon {
 							return true, candidateVertexIndex
 						}
 					}
@@ -579,6 +608,10 @@ type Vertex = Vector3D
 
 type Vector3D [3]float64
 
+func NewZeroVector3D() Vector3D {
+	return Vector3D{0, 0, 0}
+}
+
 func (v1 Vector3D) X() float64 {
 	return v1[0]
 }
@@ -607,12 +640,38 @@ func (v1 Vector3D) Sub(v2 Vector3D) Vector3D {
 	return Vector3D{v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]}
 }
 
-func (v1 Vector3D) Mul(v float64) Vector3D {
+func (v1 Vector3D) MulScalar(v float64) Vector3D {
 	return Vector3D{v1[0] * v, v1[1] * v, v1[2] * v}
 }
 
-func (v1 Vector3D) Distance(v2 Vector3D) float64 {
+func (v1 Vector3D) Mul(v2 Vector3D) Vector3D {
+	panic("外積はCross関数を利用する")
+	return Vector3D{v1[0] * v2[0], v1[1] * v2[1], v1[2] * v2[2]}
+}
+
+func (v1 Vector3D) Cross(v2 Vector3D) Vector3D {
+	return Vector3D{
+		v1[1]*v2[2] - v1[2]*v2[1],
+		v1[2]*v2[0] - v1[0]*v2[2],
+		v1[0]*v2[1] - v1[1]*v2[0],
+	}
+}
+
+func (v1 Vector3D) Dot(v2 Vector3D) float64 {
+	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
+}
+
+func (v1 Vector3D) DistanceTo(v2 Vector3D) float64 {
 	return math.Sqrt(math.Pow(v1[0]-v2[0], 2) + math.Pow(v1[1]-v2[1], 2) + math.Pow(v1[2]-v2[2], 2))
+}
+
+func (v Vector3D) Distance() float64 {
+	return math.Sqrt(math.Pow(v[0], 2) + math.Pow(v[1], 2) + math.Pow(v[2], 2))
+}
+
+func (v Vector3D) Normalize() Vector3D {
+	distance := v.Distance()
+	return Vector3D{v[0] / distance, v[1] / distance, v[2] / distance}
 }
 
 type DiscreteWorld struct {

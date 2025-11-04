@@ -218,3 +218,51 @@ func TestCleanTriangles(t *testing.T) {
 	assert.Equal(t, expected, result)
 	assert.Len(t, result, 3)
 }
+
+func TestIntersectRayTriangle_交差する場合(t *testing.T) {
+	vertices := []Vector3D{
+		{-1, -1, 1}, // 左下
+		{1, -1, 1},  // 右下
+		{0, 1, 1},   // 上
+	}
+	vertexMatrix := NewVertexMatrix(vertices)
+	triangle := [3]int{0, 1, 2}
+	rayDirection := Vector3D{0, 0, 1}.Normalize()
+
+	hit, intersection := IntersectRayTriangle(rayDirection, vertexMatrix, triangle)
+
+	assert.True(t, hit)
+	assert.InDelta(t, 0, intersection.X(), 0.001)
+	assert.InDelta(t, 0, intersection.Y(), 0.001)
+	assert.InDelta(t, 1, intersection.Z(), 0.001)
+}
+
+func TestIntersectRayTriangle_交差しない場合(t *testing.T) {
+	vertices := []Vector3D{
+		{-1, -1, 1}, // 左下
+		{1, -1, 1},  // 右下
+		{0, 1, 1},   // 上
+	}
+	vertexMatrix := NewVertexMatrix(vertices)
+	triangle := [3]int{0, 1, 2}
+	rayDirection := Vector3D{0, 1, 0}.Normalize()
+
+	hit, _ := IntersectRayTriangle(rayDirection, vertexMatrix, triangle)
+
+	assert.False(t, hit)
+}
+
+func TestIntersectRayTriangle_交差するが面が裏向きの場合(t *testing.T) {
+	vertices := []Vector3D{
+		{-1, -1, 1}, // 左下
+		{1, -1, 1},  // 右下
+		{0, 1, 1},   // 上
+	}
+	vertexMatrix := NewVertexMatrix(vertices)
+	triangle := [3]int{0, 2, 1} // 裏向きにする
+	rayDirection := Vector3D{0, 0, 1}.Normalize()
+
+	hit, _ := IntersectRayTriangle(rayDirection, vertexMatrix, triangle)
+
+	assert.False(t, hit)
+}

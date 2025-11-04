@@ -195,7 +195,7 @@ func IntersectPlaneIntersectionPoint(planeNormal Vector3D, planePoint Vector3D, 
 
 	t := -f(fromVertex) / (f(toVertex) - f(fromVertex))
 
-	p := fromVertex.Add(toVertex.Sub(fromVertex).Mul(t))
+	p := fromVertex.Add(toVertex.Sub(fromVertex).MulScalar(t))
 
 	return p
 }
@@ -271,4 +271,44 @@ func CleanTriangles(triangles [][3]int) [][3]int {
 	}
 
 	return newTriangles
+}
+
+// IntersectRayTriangle レイと三角形が交差するかを調べます
+// 三角形が裏向きの場合は交差しないと判定します。
+// 交差する場合はtrueと交点を返します
+// 交差しない場合はfalseと零ベクトルを返します
+// 三角形の向きは右ねじの法則で判別します
+func IntersectRayTriangle(rayDirection Vector3D, vertexMatrix VartexMatrix, triangle [3]int) (bool, Vector3D) {
+	v1 := vertexMatrix.GetVertex(triangle[0])
+	v2 := vertexMatrix.GetVertex(triangle[2]) // 左手座標系なのでv2とv3を入れ替えてます。
+	v3 := vertexMatrix.GetVertex(triangle[1])
+	e1 := v2.Sub(v1)
+	e2 := v3.Sub(v1)
+
+	p := rayDirection.Cross(e2)
+	det := e1.Dot(p)
+
+	if det < 0 {
+		return false, Vector3D{}
+	}
+
+	tvec := NewZeroVector3D().Sub(v1)
+	u := (tvec.Dot(p)) / det
+
+	if u < 0.0 || u > 1.0 {
+		return false, Vector3D{}
+	}
+
+	q := tvec.Cross(e1)
+	v := (rayDirection.Dot(q)) / det
+	if v < 0.0 || u+v > 1.0 {
+		return false, Vector3D{}
+	}
+
+	t := (e2.Dot(q)) / det
+	if t < 0.0 {
+		return false, Vector3D{}
+	}
+
+	return true, rayDirection.MulScalar(t)
 }
