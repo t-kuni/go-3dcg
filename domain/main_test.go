@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"image/color"
 	"math"
 	"testing"
 
@@ -840,3 +841,58 @@ func TestWorld_ClipWithViewVolume_正常系(t *testing.T) {
 // 	assert.Len(t, actual.DiscreteObjects, 1)
 // 	assert.Len(t, actual.DiscreteObjects[0].Vertices, 4)
 // }
+
+func TestCalculatedWorld_RayTrace_正常系(t *testing.T) {
+	// 小さなビューポートで簡単な三角形をレイトレースするテスト
+	world := World{
+		Viewport: Viewport{
+			Width:  20,
+			Height: 20,
+		},
+		Clipping: Clipping{
+			NearDistance: 1.0,
+			FarDistance:  2.0,
+			FieldOfView:  math.Pi / 4, // 45度
+		},
+	}
+
+	// ビューボリューム内に配置された三角形オブジェクト
+	obj := Object{
+		VertexMatrix: NewVertexMatrix([]Vector3D{
+			{-0.3, -0.3, 1.5}, // 左下
+			{0.3, -0.3, 1.5},  // 右下
+			{0.0, 0.3, 1.5},   // 上
+		}),
+		Edges: [][2]int{
+			{0, 1},
+			{1, 2},
+			{2, 0},
+		},
+		Triangles: [][3]int{
+			{0, 1, 2},
+		},
+	}
+
+	calculatedWorld := CalculatedWorld{
+		Origin:  world,
+		Objects: []Object{obj},
+	}
+
+	frameBuffer := calculatedWorld.RayTrace()
+
+	assert.Len(t, frameBuffer, 50)
+
+	black := color.RGBA{0, 0, 0, 255}
+	// 上段
+	assert.NotContains(t, frameBuffer, FrameBufferKey{X: 5, Y: 6})
+	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 10, Y: 6}].Color)
+	assert.NotContains(t, frameBuffer, FrameBufferKey{X: 14, Y: 6})
+	// 中段
+	assert.NotContains(t, frameBuffer, FrameBufferKey{X: 5, Y: 10})
+	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 10, Y: 10}].Color)
+	assert.NotContains(t, frameBuffer, FrameBufferKey{X: 14, Y: 10})
+	// 下段
+	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 5, Y: 14}].Color)
+	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 10, Y: 14}].Color)
+	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 14, Y: 14}].Color)
+}

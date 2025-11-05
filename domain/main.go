@@ -1,7 +1,11 @@
 package domain
 
 import (
+	"image"
+	"image/color"
+	"image/png"
 	"math"
+	"os"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -30,8 +34,8 @@ type Clipping struct {
 	FieldOfView float64
 }
 
-func (w World) Transform() DiscreteWorld {
-	discreateWorld := NewDiscreteWorld()
+func (w World) Transform() FrameBuffer {
+	calculatedWorld := NewCalculatedWorld(w)
 	for _, locatedObj := range w.LocatedObjects {
 		obj := locatedObj.Object
 
@@ -48,13 +52,10 @@ func (w World) Transform() DiscreteWorld {
 		// 透視投影
 		obj = w.TransformPerspectiveProjection(obj)
 
-		// ビューポート変換
-		obj.VertexMatrix.TransformViewport(w.Viewport.Width, w.Viewport.Height)
-
-		discreateWorld.AddObject(NewDiscreteObject(obj))
+		calculatedWorld.AddObject(obj)
 	}
 
-	return discreateWorld
+	return calculatedWorld.RayTrace()
 }
 
 func (w World) ClipWithViewVolume(o Object) Object {
@@ -175,34 +176,96 @@ func (w World) ViewVolume() ViewVolume {
 	}
 }
 
-// func (w World) A() {
-// 	width := w.Viewport.Width
-// 	height := w.Viewport.Height
-// 	halfWidth := width / 2
-// 	minXpixel := -halfWidth
-// 	maxXpixel := halfWidth
-// 	halfHeight := height / 2
-// 	minYpixel := -halfHeight
-// 	maxYpixel := halfHeight
+type CalculatedWorld struct {
+	Origin  World
+	Objects []Object
+}
 
-// 	viewVolume := w.ViewVolume()
-// 	minXframe := viewVolume.NearTopLeft.X()
-// 	maxXframe := viewVolume.NearTopRight.X()
-// 	minYframe := viewVolume.NearTopLeft.Y()
-// 	maxYframe := viewVolume.NearBottomLeft.Y()
-// 	for xPixel := minXpixel; xPixel <= maxXpixel; xPixel++ {
-// 		for yPixel := minYpixel; yPixel <= maxYpixel; yPixel++ {
-// 			rayPoint := Vector3D{
-// 				((float64(xPixel)+0.5)/float64(width))*(maxXframe-minXframe) + minXframe,
-// 				((float64(yPixel)+0.5)/float64(height))*(maxYframe-minYframe) + minYframe,
-// 				w.Clipping.NearDistance,
-// 			}
-// 			rayDistance := rayPoint.Distance()
-// 			rayDirection := rayPoint.Normalize()
-// 			fmt.Println(rayDirection, rayDistance)
-// 		}
-// 	}
-// }
+func NewCalculatedWorld(w World) CalculatedWorld {
+	return CalculatedWorld{
+		Origin:  w,
+		Objects: make([]Object, 0, len(w.LocatedObjects)),
+	}
+}
+
+func (w *CalculatedWorld) AddObject(o Object) {
+	w.Objects = append(w.Objects, o)
+}
+
+type FrameBufferKey struct {
+	X int32
+	Y int32
+}
+
+type FrameBufferValue struct {
+	Color color.RGBA
+	Depth float64
+}
+
+type FrameBuffer map[FrameBufferKey]FrameBufferValue
+
+// SaveAsImage はFrameBufferを画像ファイルとして保存します
+func (fb FrameBuffer) SaveAsImage(width int, height int, path string) error {
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			key := FrameBufferKey{X: int32(x), Y: int32(y)}
+			if value, ok := fb[key]; ok {
+				img.Set(x, y, value.Color)
+			} else {
+				img.Set(x, y, color.RGBA{255, 255, 255, 255})
+			}
+		}
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return png.Encode(file, img)
+}
+
+func (w CalculatedWorld) RayTrace() FrameBuffer {
+	width := w.Origin.Viewport.Width
+	height := w.Origin.Viewport.Height
+
+	viewVolume := w.Origin.ViewVolume()
+	minXframe := viewVolume.NearTopLeft.X()
+	maxXframe := viewVolume.NearTopRight.X()
+	minYframe := viewVolume.NearTopLeft.Y()
+	maxYframe := viewVolume.NearBottomLeft.Y()
+
+	frameBuffer := make(FrameBuffer, width*height)
+	for xPixel := int32(0); xPixel < width; xPixel++ {
+		for yPixel := int32(0); yPixel < height; yPixel++ {
+			rayPoint := Vector3D{
+				((float64(xPixel)+0.5)/float64(width))*(maxXframe-minXframe) + minXframe,
+				((float64(yPixel)+0.5)/float64(height))*(maxYframe-minYframe) + minYframe,
+				w.Origin.Clipping.NearDistance,
+			}
+			rayDirection := rayPoint.Normalize()
+
+			for _, lObj := range w.Objects {
+				for _, triangle := range lObj.Triangles {
+					hit, intersection := IntersectRayTriangle(rayDirection, lObj.VertexMatrix, triangle)
+					if !hit {
+						continue
+					}
+					depth := intersection.Z()
+					key := FrameBufferKey{X: xPixel, Y: yPixel}
+					if v, ok := frameBuffer[key]; !ok || depth < v.Depth {
+						frameBuffer[key] = FrameBufferValue{Color: color.RGBA{0, 0, 0, 255}, Depth: depth}
+					}
+				}
+			}
+		}
+	}
+
+	return frameBuffer
+}
 
 func (v ViewVolume) PlaneNormal(clippingPlaneType ClippingPlaneType) Vector3D {
 	switch clippingPlaneType {
