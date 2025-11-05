@@ -249,7 +249,7 @@ func (w CalculatedWorld) RayTrace() FrameBuffer {
 			rayDirection := rayPoint.Normalize()
 
 			for _, lObj := range w.Objects {
-				for _, triangle := range lObj.Triangles {
+				for triangleIndex, triangle := range lObj.Triangles {
 					hit, intersection := IntersectRayTriangle(rayDirection, lObj.VertexMatrix, triangle)
 					if !hit {
 						continue
@@ -257,7 +257,14 @@ func (w CalculatedWorld) RayTrace() FrameBuffer {
 					depth := intersection.Z()
 					key := FrameBufferKey{X: xPixel, Y: yPixel}
 					if v, ok := frameBuffer[key]; !ok || depth < v.Depth {
-						frameBuffer[key] = FrameBufferValue{Color: color.RGBA{0, 0, 0, 255}, Depth: depth}
+						// 三角形の色を取得
+						var triangleColor color.RGBA
+						if triangleIndex < len(lObj.TriangleColors) {
+							triangleColor = lObj.TriangleColors[triangleIndex]
+						} else {
+							triangleColor = color.RGBA{0, 0, 0, 255} // デフォルト色
+						}
+						frameBuffer[key] = FrameBufferValue{Color: triangleColor, Depth: depth}
 					}
 				}
 			}
@@ -368,7 +375,7 @@ func (v ViewVolume) SutherlandHodgman(triangle [3]Vector3D) []Vector3D {
 func (v ViewVolume) ClipObject(o Object) Object {
 	newObject := NewDynamicObject()
 
-	for _, triangle := range o.Triangles {
+	for i, triangle := range o.Triangles {
 		triangleVertices := [3]Vector3D{
 			o.VertexMatrix.GetVertex(triangle[0]),
 			o.VertexMatrix.GetVertex(triangle[1]),
@@ -376,8 +383,18 @@ func (v ViewVolume) ClipObject(o Object) Object {
 		}
 		vertices := v.SutherlandHodgman(triangleVertices)
 		triangles := Triangulate(vertices)
+
+		// 元の三角形の色を取得
+		var originalColor color.RGBA
+		if i < len(o.TriangleColors) {
+			originalColor = o.TriangleColors[i]
+		} else {
+			originalColor = color.RGBA{0, 0, 0, 255} // デフォルト色
+		}
+
+		// 新しく生成された三角形すべてに元の色を設定
 		for _, triangle := range triangles {
-			newObject.AddTriangle(triangle)
+			newObject.AddTriangleWithColor(triangle, originalColor)
 		}
 	}
 
@@ -461,9 +478,10 @@ func (v ViewVolume) MargeVertices(o Object) Object {
 	}
 
 	dObj := DynamicObject{
-		Vertices:  grid.Vertices(),
-		Edges:     CleanEdges(newEdges),
-		Triangles: CleanTriangles(newTriangles),
+		Vertices:       grid.Vertices(),
+		Edges:          CleanEdges(newEdges),
+		Triangles:      CleanTriangles(newTriangles),
+		TriangleColors: o.TriangleColors, // 元の三角形の色をそのまま引き継ぐ
 	}
 	return dObj.ToObject()
 }
@@ -493,44 +511,45 @@ type Object struct {
 	Edges [][2]int
 	// Triangles 三角形を表す。3つの頂点の添字番号を保持する
 	// 右ねじの法則に従って法線の方向が決まります。
-	Triangles [][3]int
-}
-
-func NewObject(vertices []Vertex, edges [][2]int, triangles [][3]int) Object {
-	return Object{
-		VertexMatrix: NewVertexMatrix(vertices),
-		Edges:        edges,
-		Triangles:    triangles,
-	}
+	Triangles      [][3]int
+	TriangleColors []color.RGBA
 }
 
 // DynamicObject は動的に頂点を追加できるオブジェクトを表します。
 type DynamicObject struct {
-	Vertices  []Vertex
-	Edges     [][2]int
-	Triangles [][3]int
+	Vertices       []Vertex
+	Edges          [][2]int
+	Triangles      [][3]int
+	TriangleColors []color.RGBA
 }
 
 func NewDynamicObject() DynamicObject {
 	return DynamicObject{
-		Vertices:  make([]Vertex, 0, 50),
-		Edges:     make([][2]int, 0, 50),
-		Triangles: make([][3]int, 0, 50),
+		Vertices:       make([]Vertex, 0, 50),
+		Edges:          make([][2]int, 0, 50),
+		Triangles:      make([][3]int, 0, 50),
+		TriangleColors: make([]color.RGBA, 0, 50),
 	}
 }
 
 func (o *DynamicObject) AddTriangle(triangle [3]Vector3D) {
+	o.AddTriangleWithColor(triangle, color.RGBA{0, 0, 0, 255})
+}
+
+func (o *DynamicObject) AddTriangleWithColor(triangle [3]Vector3D, triangleColor color.RGBA) {
 	nextIndex := len(o.Vertices)
 	o.Vertices = append(o.Vertices, triangle[0], triangle[1], triangle[2])
 	o.Edges = append(o.Edges, [2]int{nextIndex, nextIndex + 1}, [2]int{nextIndex + 1, nextIndex + 2}, [2]int{nextIndex + 2, nextIndex})
 	o.Triangles = append(o.Triangles, [3]int{nextIndex, nextIndex + 1, nextIndex + 2})
+	o.TriangleColors = append(o.TriangleColors, triangleColor)
 }
 
 func (o *DynamicObject) ToObject() Object {
 	return Object{
-		VertexMatrix: NewVertexMatrix(o.Vertices),
-		Edges:        o.Edges,
-		Triangles:    o.Triangles,
+		VertexMatrix:   NewVertexMatrix(o.Vertices),
+		Edges:          o.Edges,
+		Triangles:      o.Triangles,
+		TriangleColors: o.TriangleColors,
 	}
 }
 
