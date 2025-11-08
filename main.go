@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/t-kuni/go-3dcg/domain"
 )
 
@@ -20,22 +22,22 @@ type Game struct {
 func (g *Game) Update() error {
 	// キー入力によるカメラ移動
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.world.Camera.Location[2] += 0.1
+		g.world.Camera.Location[2] += 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.world.Camera.Location[2] -= 0.1
+		g.world.Camera.Location[2] -= 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.world.Camera.Location[0] += 0.1
+		g.world.Camera.Location[0] += 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.world.Camera.Location[0] -= 0.1
+		g.world.Camera.Location[0] -= 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyR) {
-		g.world.Camera.Location[1] += 0.1
+		g.world.Camera.Location[1] += 0.025
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyF) {
-		g.world.Camera.Location[1] -= 0.1
+		g.world.Camera.Location[1] -= 0.025
 	}
 	return nil
 }
@@ -50,6 +52,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for key, value := range frameBuffer {
 		screen.Set(int(key.X), int(key.Y), value.Color)
 	}
+
+	// FPSを表示
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.ActualFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -64,7 +69,9 @@ func main() {
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
-				X: 0, Y: 0, Z: 0,
+				X: 0.1, Y: 0, Z: 1,
+				Scale:  domain.Vector3D{0.3, 0.6, 0.3},
+				Rotate: domain.Vector3D{-0.1, 0, 0},
 				Object: domain.Object{
 					VertexMatrix: domain.NewVertexMatrix([]domain.Vector3D{
 						{-0.2, -0.1, 1.1}, // 左下

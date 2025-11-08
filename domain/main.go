@@ -40,6 +40,8 @@ func (w World) Transform() FrameBuffer {
 		obj := locatedObj.Object
 
 		// ワールド座標変換
+		obj.VertexMatrix.TransformScale(locatedObj.Scale.X(), locatedObj.Scale.Y(), locatedObj.Scale.Z())
+		obj.VertexMatrix.TransformRotate(locatedObj.Rotate.X(), locatedObj.Rotate.Y(), locatedObj.Rotate.Z())
 		obj.VertexMatrix.TransformTranslate(locatedObj.X, locatedObj.Y, locatedObj.Z)
 
 		// カメラ座標変換
@@ -500,6 +502,8 @@ type Camera struct {
 
 type LocatedObject struct {
 	X, Y, Z float64
+	Scale   Vector3D
+	Rotate  Vector3D
 	Object  Object
 }
 
@@ -625,6 +629,7 @@ func (v *VartexMatrix) TransformRotate(x, y, z float64) {
 // transformScale は3次元オブジェクトの拡大・縮小変換を行います
 // scaleX, scaleY, scaleZ はそれぞれのX、Y、Z軸方向の拡大率です
 // 第一引数mは４行である必要がある
+// 正方向からオブジェクトを見て時計回りに回転する
 func (v *VartexMatrix) TransformScale(scaleX, scaleY, scaleZ float64) {
 	m := mat.NewDense(4, 4, []float64{
 		scaleX, 0, 0, 0,

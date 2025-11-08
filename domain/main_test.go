@@ -896,3 +896,64 @@ func TestCalculatedWorld_RayTrace_正常系(t *testing.T) {
 	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 10, Y: 14}].Color)
 	assert.Equal(t, black, frameBuffer[FrameBufferKey{X: 14, Y: 14}].Color)
 }
+
+func TestVartexMatrix_TransformTranslate_正常系(t *testing.T) {
+	vertices := []Vector3D{
+		{1.0, 2.0, 3.0},
+		{4.0, 5.0, 6.0},
+	}
+
+	vm := NewVertexMatrix(vertices)
+
+	vm.TransformTranslate(2.0, 3.0, 4.0)
+
+	// 結果を検証
+	assert.InDelta(t, 3.0, vm.GetVertex(0).X(), 1e-6) // 1.0 + 2.0 = 3.0
+	assert.InDelta(t, 5.0, vm.GetVertex(0).Y(), 1e-6) // 2.0 + 3.0 = 5.0
+	assert.InDelta(t, 7.0, vm.GetVertex(0).Z(), 1e-6) // 3.0 + 4.0 = 7.0
+
+	assert.InDelta(t, 6.0, vm.GetVertex(1).X(), 1e-6)  // 4.0 + 2.0 = 6.0
+	assert.InDelta(t, 8.0, vm.GetVertex(1).Y(), 1e-6)  // 5.0 + 3.0 = 8.0
+	assert.InDelta(t, 10.0, vm.GetVertex(1).Z(), 1e-6) // 6.0 + 4.0 = 10.0
+}
+
+func TestVartexMatrix_TransformRotate_正常系(t *testing.T) {
+	vertices := []Vector3D{
+		{1.0, 0.0, 0.0}, // X軸上の点
+		{0.0, 1.0, 0.0}, // Y軸上の点
+	}
+
+	vm := NewVertexMatrix(vertices)
+
+	// Z軸周りに90度（π/2ラジアン）回転
+	vm.TransformRotate(0.0, 0.0, math.Pi/2)
+
+	assert.InDelta(t, 0.0, vm.GetVertex(0).X(), 1e-6)
+	assert.InDelta(t, 1.0, vm.GetVertex(0).Y(), 1e-6)
+	assert.InDelta(t, 0.0, vm.GetVertex(0).Z(), 1e-6)
+
+	assert.InDelta(t, -1.0, vm.GetVertex(1).X(), 1e-6)
+	assert.InDelta(t, 0.0, vm.GetVertex(1).Y(), 1e-6)
+	assert.InDelta(t, 0.0, vm.GetVertex(1).Z(), 1e-6)
+}
+
+func TestVartexMatrix_TransformScale_正常系(t *testing.T) {
+	vertices := []Vector3D{
+		{1.0, 2.0, 3.0},
+		{4.0, 5.0, 6.0},
+	}
+
+	vm := NewVertexMatrix(vertices)
+
+	// スケール変換を実行 (x*2, y*3, z*0.5)
+	vm.TransformScale(2.0, 3.0, 0.5)
+
+	// 結果を検証
+	assert.InDelta(t, 2.0, vm.GetVertex(0).X(), 1e-6) // 1.0 * 2.0 = 2.0
+	assert.InDelta(t, 6.0, vm.GetVertex(0).Y(), 1e-6) // 2.0 * 3.0 = 6.0
+	assert.InDelta(t, 1.5, vm.GetVertex(0).Z(), 1e-6) // 3.0 * 0.5 = 1.5
+
+	assert.InDelta(t, 8.0, vm.GetVertex(1).X(), 1e-6)  // 4.0 * 2.0 = 8.0
+	assert.InDelta(t, 15.0, vm.GetVertex(1).Y(), 1e-6) // 5.0 * 3.0 = 15.0
+	assert.InDelta(t, 3.0, vm.GetVertex(1).Z(), 1e-6)  // 6.0 * 0.5 = 3.0
+}
