@@ -16,7 +16,8 @@ const (
 )
 
 type Game struct {
-	world domain.World
+	world      domain.World
+	frameCount int
 }
 
 func (g *Game) Update() error {
@@ -43,12 +44,16 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	g.frameCount++
+
+	g.world.LocatedObjects[0].Rotate[1] += 0.06
+	g.world.LocatedObjects[0].Rotate[0] += 0.06
+
 	frameBuffer := g.world.Transform()
 
 	// 画面をクリア（背景色を白に設定）
 	screen.Fill(color.RGBA{255, 255, 255, 255})
 
-	// 各DiscreteObjectについて、Edgesに従って直線を描画
 	for key, value := range frameBuffer {
 		screen.Set(int(key.X), int(key.Y), value.Color)
 	}
@@ -69,15 +74,15 @@ func main() {
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
-				X: 0.1, Y: 0, Z: 1,
-				Scale:  domain.Vector3D{0.3, 0.6, 0.3},
-				Rotate: domain.Vector3D{-0.1, 0, 0},
+				X: 0, Y: -0.1, Z: 2,
+				Scale:  domain.Vector3D{1.0, 1.0, 1.0},
+				Rotate: domain.Vector3D{0.0, 0.0, 0.0},
 				Object: domain.Object{
 					VertexMatrix: domain.NewVertexMatrix([]domain.Vector3D{
-						{-0.2, -0.1, 1.1}, // 左下
-						{0.2, -0.1, 1.1},  // 右下
-						{0.0, 0.1, 1.9},   // 奥
-						{0.0, 0.1, 1.1},   // 上
+						{-0.2, 0, 0},    // 左下
+						{0.2, 0, 0},     // 右下
+						{0.0, 0.0, 0.4}, // 奥
+						{0.0, 0.2, 0.2}, // 上
 					}),
 					Edges: [][2]int{
 						{0, 1},
