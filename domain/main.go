@@ -519,6 +519,23 @@ type Object struct {
 	TriangleColors []color.RGBA
 }
 
+func NewPlaneObject(width, height float64, c color.RGBA) Object {
+	return Object{
+		VertexMatrix: NewVertexMatrix([]Vector3D{
+			{-width / 2, height / 2, 0},  // 左上
+			{width / 2, height / 2, 0},   // 右上
+			{width / 2, -height / 2, 0},  // 右下
+			{-width / 2, -height / 2, 0}, // 左下
+		}),
+		Edges: [][2]int{},
+		Triangles: [][3]int{
+			{0, 3, 1},
+			{1, 3, 2},
+		},
+		TriangleColors: []color.RGBA{c, c},
+	}
+}
+
 // DynamicObject は動的に頂点を追加できるオブジェクトを表します。
 type DynamicObject struct {
 	Vertices       []Vertex

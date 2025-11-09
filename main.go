@@ -40,6 +40,18 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyF) {
 		g.world.Camera.Location[1] -= 0.025
 	}
+	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+		g.world.Camera.Direction[1] += -0.025
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyE) {
+		g.world.Camera.Direction[1] += 0.025
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyT) {
+		g.world.Camera.Direction[0] += -0.025
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyG) {
+		g.world.Camera.Direction[0] += 0.025
+	}
 	return nil
 }
 
@@ -105,6 +117,12 @@ func main() {
 						{255, 255, 0, 255},
 					},
 				},
+			},
+			{
+				X: -0.2, Y: 0.0, Z: 2,
+				Scale:  domain.Vector3D{1.0, 1.0, 1.0},
+				Rotate: domain.Vector3D{0.0, -math.Pi / 2.0, 0.0},
+				Object: domain.NewPlaneObject(0.3, 0.3, color.RGBA{50, 50, 50, 255}),
 			},
 		},
 		Viewport: domain.Viewport{
