@@ -58,8 +58,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.frameCount++
 
-	g.world.LocatedObjects[0].Rotate[1] += 0.06
-	g.world.LocatedObjects[0].Rotate[0] += 0.06
+	g.world.LocatedObjects[0].Rotation[1] += 0.1
+	g.world.LocatedObjects[0].Rotation[0] += 0.1
 
 	frameBuffer := g.world.Transform()
 
@@ -86,43 +86,28 @@ func main() {
 		},
 		LocatedObjects: []domain.LocatedObject{
 			{
-				X: 0, Y: -0.1, Z: 2,
-				Scale:  domain.Vector3D{1.0, 1.0, 1.0},
-				Rotate: domain.Vector3D{0.0, 0.0, 0.0},
-				Object: domain.Object{
-					VertexMatrix: domain.NewVertexMatrix([]domain.Vector3D{
-						{-0.2, 0, 0},    // 左下
-						{0.2, 0, 0},     // 右下
-						{0.0, 0.0, 0.4}, // 奥
-						{0.0, 0.2, 0.2}, // 上
-					}),
-					Edges: [][2]int{
-						{0, 1},
-						{0, 2},
-						{0, 3},
-						{1, 2},
-						{1, 3},
-						{2, 3},
-					},
-					Triangles: [][3]int{
-						{0, 1, 3},
-						{0, 2, 1},
-						{0, 3, 2},
-						{1, 2, 3},
-					},
-					TriangleColors: []color.RGBA{
-						{255, 0, 0, 255},
-						{0, 255, 0, 255},
-						{0, 0, 255, 255},
-						{255, 255, 0, 255},
-					},
-				},
+				Location: domain.Vector3D{0, 0, 2},
+				Scale:    domain.Vector3D{1.0, 1.0, 1.0},
+				Rotation: domain.Vector3D{0.0, 0.0, 0.0},
+				Object:   domain.NewTetrahedronObject(0.15),
 			},
 			{
-				X: -0.2, Y: 0.0, Z: 2,
-				Scale:  domain.Vector3D{1.0, 1.0, 1.0},
-				Rotate: domain.Vector3D{0.0, -math.Pi / 2.0, 0.0},
-				Object: domain.NewPlaneObject(0.3, 0.3, color.RGBA{50, 50, 50, 255}),
+				Location: domain.Vector3D{0.0, 0.0, 2.5},
+				Scale:    domain.Vector3D{1.0, 1.0, 1.0},
+				Rotation: domain.Vector3D{0.0, 0.0, 0.0},
+				Object:   domain.NewPlaneObject(0.3, 0.3, color.RGBA{50, 50, 50, 255}),
+			},
+			{
+				Location: domain.Vector3D{-0.2, 0.0, 2},
+				Scale:    domain.Vector3D{1.0, 1.0, 1.0},
+				Rotation: domain.Vector3D{0.0, -math.Pi / 2.0, 0.0},
+				Object:   domain.NewPlaneObject(0.3, 0.3, color.RGBA{50, 50, 50, 255}),
+			},
+			{
+				Location: domain.Vector3D{0.2, 0.0, 2},
+				Scale:    domain.Vector3D{1.0, 1.0, 1.0},
+				Rotation: domain.Vector3D{0.0, math.Pi / 2.0, 0.0},
+				Object:   domain.NewPlaneObject(0.3, 0.3, color.RGBA{50, 50, 50, 255}),
 			},
 		},
 		Viewport: domain.Viewport{

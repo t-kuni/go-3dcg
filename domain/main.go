@@ -41,8 +41,8 @@ func (w World) Transform() FrameBuffer {
 
 		// ワールド座標変換
 		obj.VertexMatrix.TransformScale(locatedObj.Scale.X(), locatedObj.Scale.Y(), locatedObj.Scale.Z())
-		obj.VertexMatrix.TransformRotate(locatedObj.Rotate.X(), locatedObj.Rotate.Y(), locatedObj.Rotate.Z())
-		obj.VertexMatrix.TransformTranslate(locatedObj.X, locatedObj.Y, locatedObj.Z)
+		obj.VertexMatrix.TransformRotate(locatedObj.Rotation.X(), locatedObj.Rotation.Y(), locatedObj.Rotation.Z())
+		obj.VertexMatrix.TransformTranslate(locatedObj.Location.X(), locatedObj.Location.Y(), locatedObj.Location.Z())
 
 		// カメラ座標変換
 		obj.VertexMatrix.TransformTranslate(-w.Camera.Location.X(), -w.Camera.Location.Y(), -w.Camera.Location.Z())
@@ -501,10 +501,10 @@ type Camera struct {
 }
 
 type LocatedObject struct {
-	X, Y, Z float64
-	Scale   Vector3D
-	Rotate  Vector3D
-	Object  Object
+	Location Vector3D
+	Scale    Vector3D
+	Rotation Vector3D
+	Object   Object
 }
 
 type Object struct {
@@ -533,6 +533,41 @@ func NewPlaneObject(width, height float64, c color.RGBA) Object {
 			{1, 3, 2},
 		},
 		TriangleColors: []color.RGBA{c, c},
+	}
+}
+
+func NewTetrahedronObject(radius float64) Object {
+	v1Dir := Vector3D{-0.817, -0.333, -0.471} // 左下
+	v2Dir := Vector3D{0.817, -0.333, -0.471}  // 右下
+	v3Dir := Vector3D{0, -0.333, 0.943}       // 奥
+	v4Dir := Vector3D{0, 1.0, 0.0}            // 上
+	return Object{
+		VertexMatrix: NewVertexMatrix([]Vector3D{
+			v1Dir.MulScalar(radius), // 左下
+			v2Dir.MulScalar(radius), // 右下
+			v3Dir.MulScalar(radius), // 奥
+			v4Dir.MulScalar(radius), // 上
+		}),
+		Edges: [][2]int{
+			{0, 1},
+			{0, 2},
+			{0, 3},
+			{1, 2},
+			{1, 3},
+			{2, 3},
+		},
+		Triangles: [][3]int{
+			{0, 1, 3},
+			{0, 2, 1},
+			{0, 3, 2},
+			{1, 2, 3},
+		},
+		TriangleColors: []color.RGBA{
+			{255, 0, 0, 255},
+			{0, 255, 0, 255},
+			{0, 0, 255, 255},
+			{255, 255, 0, 255},
+		},
 	}
 }
 
